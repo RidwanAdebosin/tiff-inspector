@@ -20,3 +20,7 @@ services:
       # one rate-limit bucket.
       - key: TIFF_INSPECTOR_TRUST_PROXY
         value: "true"
+      # Render terminates TLS and redirects HTTP to HTTPS, so every client
+      # reaches the service over HTTPS.
+      - key: TIFF_INSPECTOR_HSTS
+        value: "true"

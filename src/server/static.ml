@@ -44,7 +44,9 @@ let content_type path =
     (List.assoc_opt ext content_types)
 
 let csp =
-  "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
+  "default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; \
+   frame-ancestors 'none'; base-uri 'none'; object-src 'none'; form-action \
+   'self'"
 
 (* Safe relative segments for a URL path, or [None] if it must be refused. *)
 let segments path =
