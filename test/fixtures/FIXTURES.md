@@ -51,6 +51,7 @@ Comp = Compression.
 | `multi_ifd.tif` | 466 | IFD chain of 3 directories with different shapes | II | classic | 3 |
 | `deflate.tif` | 206 | Adobe Deflate (8) compression, Predictor=1 | II | classic | 1 |
 | `bigtiff.tif` | 360 | BigTIFF (magic 43), 16-bit, LONG8 strip offsets/counts | II | BigTIFF | 1 |
+| `bigtiff_rgb_inline.tif` | 300 | **Regression:** BigTIFF RGB with BitsPerSample=[8,8,8] and SampleFormat=[1,1,1] inline in the 8-byte value field (as GDAL writes them) | II | BigTIFF | 1 |
 | `tiled.tif` | 1192 | Tiled layout (TileOffsets/TileByteCounts), no strip tags | II | classic | 1 |
 | `gray_alpha.tif` | 166 | **Regression:** multi-value inline tag (BitsPerSample=[8,8] in the 4-byte field), ExtraSamples | II | classic | 1 |
 | `unknown_tag.tif` | 776 | Private tags 65000 (ASCII) and 65001 (100 LONGs at offset): unknown-tag display and value truncation | II | classic | 1 |
@@ -68,6 +69,7 @@ Comp = Compression.
 | | 2 | 2×2 | 3 | 8,8,8 | absent | 2 RGB | 1 | 1 none | strips | 1 strip |
 | `deflate.tif` | 0 | 8×8 | 1 | 8 | absent | 1 BlackIsZero | absent | 8 Adobe Deflate | strips | 1 strip (decodes to 64 B) |
 | `bigtiff.tif` | 0 | 8×8 | 1 | 16 | 1 | 1 BlackIsZero | absent | 1 none | strips (LONG8 offsets) | 1 strip (128 B) |
+| `bigtiff_rgb_inline.tif` | 0 | 4×4 | 3 | 8,8,8 (inline) | 1,1,1 (inline) | 2 RGB | 1 | 1 none | strips (LONG8 offsets) | 1 strip (48 B) |
 | `tiled.tif` | 0 | 32×32 | 1 | 8 | absent | 1 BlackIsZero | absent | 1 none | tiles 16×16 | 4 tiles (256 B each) |
 | `gray_alpha.tif` | 0 | 4×4 | 2 | 8,8 (inline) | absent | 1 BlackIsZero | absent | 1 none | strips | 1 strip |
 | `unknown_tag.tif` | 0 | 16×8 | 1 | 8 | absent | 1 BlackIsZero | absent | 1 none | strips | 1 strip |
