@@ -16,7 +16,7 @@ let inspect format tags only max_ifds debug path =
   else
     let limits = { I.Inspect.default_limits with max_ifds } in
     let outcome =
-      try I.Inspect.file ~limits path
+      try Tiff_inspector_unix.file ~limits path
       with exn ->
         if debug then prerr_endline (Printexc.to_string exn);
         Error

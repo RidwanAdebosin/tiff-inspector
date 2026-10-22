@@ -634,9 +634,3 @@ let run ?(limits = default_limits) (src : Source.t) :
               warnings;
               limitations;
             })
-
-let file ?limits path =
-  match Source.with_file path (run ?limits) with
-  | Ok r -> r
-  | Error error ->
-      Error { failed_file = Some (Filename.basename path, None); error }

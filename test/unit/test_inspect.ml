@@ -6,12 +6,12 @@ open Report
 let fixture name = Filename.concat "../fixtures" name
 
 let inspect name =
-  match Inspect.file (fixture name) with
+  match Tiff_inspector_unix.file (fixture name) with
   | Ok r -> r
   | Error f -> Alcotest.failf "%s failed: %s" name f.error.message
 
 let fails name =
-  match Inspect.file (fixture name) with
+  match Tiff_inspector_unix.file (fixture name) with
   | Ok _ -> Alcotest.failf "%s unexpectedly succeeded" name
   | Error f -> f.error.code
 
@@ -340,7 +340,7 @@ let sparse_beyond_2gib () =
       in
       if (not written) || Unix.gettimeofday () -. t0 > 2. then Alcotest.skip ()
       else
-        match Inspect.file path with
+        match Tiff_inspector_unix.file path with
         | Error f -> Alcotest.failf "sparse file failed: %s" f.error.message
         | Ok r ->
             Alcotest.(check int) "first ifd" ifd r.file.first_ifd_offset;

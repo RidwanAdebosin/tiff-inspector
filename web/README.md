@@ -25,6 +25,19 @@ export.
 If the API server is not running, uploads end in a "Network error" or "Server error"
 state with a Retry button.
 
+## Playground
+
+`/playground` runs OCaml in the browser. It needs `public/playground/toplevel.js`,
+which is built from the OCaml sources and not committed:
+
+```sh
+(cd .. && scripts/build-playground.sh)
+```
+
+Without it the page loads but reports that the bundle is missing.
+`public/playground/worker.js` hosts the toplevel in a web worker, and
+`src/playground/` holds the page, the editor and the worker client.
+
 ## Scripts
 
 | Script                     | What it does                                                                        |

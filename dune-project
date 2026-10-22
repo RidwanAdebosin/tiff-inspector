@@ -40,3 +40,12 @@
    (and
     (= 0.29.0)
     :with-dev-setup))))
+
+(package
+ (name tiff-inspector-playground)
+ (synopsis "Browser playground: the OCaml toplevel plus the TIFF inspector core, compiled to JavaScript")
+ (depends
+  (tiff-inspector (= :version))
+  (js_of_ocaml (>= 6.0))
+  (js_of_ocaml-compiler (>= 6.0))
+  (js_of_ocaml-toplevel (>= 6.0))))

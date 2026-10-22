@@ -5,13 +5,14 @@
 # --- OCaml binaries -----------------------------------------------------------
 FROM ocaml/opam:debian-12-ocaml-5.4 AS ocaml
 WORKDIR /home/opam/src
-COPY --chown=opam:opam tiff-inspector.opam ./
+COPY --chown=opam:opam tiff-inspector.opam tiff-inspector-playground.opam ./
 RUN opam install . --deps-only --yes
 COPY --chown=opam:opam . .
-RUN opam exec -- dune build @install --profile release \
+RUN opam exec -- dune build @install playground/top.bc.js --profile release \
  && mkdir -p /home/opam/out \
  && cp _build/install/default/bin/tiff-inspector \
-       _build/install/default/bin/tiff-inspector-server /home/opam/out/
+       _build/install/default/bin/tiff-inspector-server /home/opam/out/ \
+ && cp _build/default/playground/top.bc.js /home/opam/out/toplevel.js
 
 # --- Web app ------------------------------------------------------------------
 FROM node:22-slim AS web
@@ -20,6 +21,8 @@ COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
 COPY schema/ /src/schema/
+# The OCaml playground bundle (see playground/dune).
+COPY --from=ocaml /home/opam/out/toplevel.js public/playground/toplevel.js
 RUN npm run build
 
 # --- Runtime ------------------------------------------------------------------

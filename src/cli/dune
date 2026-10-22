@@ -2,4 +2,4 @@
  (name main)
  (public_name tiff-inspector)
  (package tiff-inspector)
- (libraries tiff_inspector cmdliner))
+ (libraries tiff_inspector tiff_inspector_unix cmdliner))
