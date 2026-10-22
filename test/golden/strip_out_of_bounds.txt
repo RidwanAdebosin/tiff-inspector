@@ -1,0 +1,63 @@
+TIFF INSPECTOR
+==============
+
+File: strip_out_of_bounds.tif
+File size: 332 bytes
+Byte order: Little-endian
+Format: Classic TIFF
+Image directories: 1
+
+Image
+-----
+Width: 16
+Height: 8
+
+Samples
+-------
+Samples per pixel: 1
+Sample format: Unsigned integer (1) (default, tag absent)
+Bits per sample: 8
+
+Storage
+-------
+Photometric interpretation: BlackIsZero (1)
+Planar configuration: Contiguous (chunky) (1) (default, tag absent)
+Compression: None (1)
+Predictor: None (1) (default, tag absent)
+Rows per strip: 8
+Strips: 1
+Image data: 65536 bytes (64.0 KiB)
+
+Planes
+------
+Plane 0: 16x8, samples [0], bits [8]
+
+Other
+-----
+Orientation: Top-left (1) (default, tag absent)
+X resolution: 72
+Y resolution: 72
+Resolution unit: Inch (2)
+Pixel decoding (ocaml-tiff): supported (not attempted)
+
+Tags
+----
+ID       Name                         Type          Count  Value
+256      ImageWidth                   short             1  16
+257      ImageLength                  short             1  8
+258      BitsPerSample                short             1  8
+259      Compression                  short             1  1
+262      PhotometricInterpretation    short             1  1
+270      ImageDescription             ascii            14  "gray8 fixture"
+273      StripOffsets                 long              1  8
+277      SamplesPerPixel              short             1  1
+278      RowsPerStrip                 short             1  8
+279      StripByteCounts              long              1  65536
+282      XResolution                  rational          1  72/1
+283      YResolution                  rational          1  72/1
+296      ResolutionUnit               short             1  2
+
+Warnings
+--------
+- [chunk_out_of_bounds] 1 data chunk(s) extend past the end of the file (first: offset 8, 65536 bytes; file is 332 bytes)
+

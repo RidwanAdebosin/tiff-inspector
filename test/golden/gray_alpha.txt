@@ -1,0 +1,60 @@
+TIFF INSPECTOR
+==============
+
+File: gray_alpha.tif
+File size: 166 bytes
+Byte order: Little-endian
+Format: Classic TIFF
+Image directories: 1
+
+Image
+-----
+Width: 4
+Height: 4
+
+Samples
+-------
+Samples per pixel: 2
+Sample format: Unsigned integer (1), Unsigned integer (1) (default, tag absent)
+Bits per sample: 8, 8
+
+Storage
+-------
+Photometric interpretation: BlackIsZero (1)
+Planar configuration: Contiguous (chunky) (1) (default, tag absent)
+Compression: None (1)
+Predictor: None (1) (default, tag absent)
+Rows per strip: 4
+Strips: 1
+Image data: 32 bytes
+
+Planes
+------
+Plane 0: 4x4, samples [0, 1], bits [8, 8]
+
+Other
+-----
+Orientation: Top-left (1) (default, tag absent)
+X resolution: unknown (tag absent)
+Y resolution: unknown (tag absent)
+Resolution unit: Inch (2) (default, tag absent)
+Pixel decoding (ocaml-tiff): supported (not attempted)
+
+Tags
+----
+ID       Name                         Type          Count  Value
+256      ImageWidth                   short             1  4
+257      ImageLength                  short             1  4
+258      BitsPerSample                short             2  8, 8
+259      Compression                  short             1  1
+262      PhotometricInterpretation    short             1  1
+273      StripOffsets                 long              1  8
+277      SamplesPerPixel              short             1  2
+278      RowsPerStrip                 short             1  4
+279      StripByteCounts              long              1  32
+338      ExtraSamples                 short             1  2
+
+Warnings
+--------
+- [library_error] ocaml-tiff could not read BitsPerSample: Read of 4 bytes at offset 524296 goes past the end of the file (166 bytes)
+

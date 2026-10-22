@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "ok": false,
+  "tool": { "name": "tiff-inspector", "version": "0.1.0" },
+  "file": { "name": "huge_strip_count.tif", "size_bytes": 332 },
+  "error": {
+    "code": "malformed",
+    "message": "Tag 273 declares 1073741823 values, more than the file could contain"
+  }
+}

@@ -1,0 +1,56 @@
+TIFF INSPECTOR
+==============
+
+File: bigtiff.tif
+File size: 360 bytes
+Byte order: Little-endian
+Format: BigTIFF
+Image directories: 1
+
+Image
+-----
+Width: 8
+Height: 8
+
+Samples
+-------
+Samples per pixel: 1
+Sample format: Unsigned integer (1)
+Bits per sample: 16
+
+Storage
+-------
+Photometric interpretation: BlackIsZero (1)
+Planar configuration: Contiguous (chunky) (1) (default, tag absent)
+Compression: None (1)
+Predictor: None (1) (default, tag absent)
+Rows per strip: 8
+Strips: 1
+Image data: 128 bytes
+
+Planes
+------
+Plane 0: 8x8, samples [0], bits [16]
+
+Other
+-----
+Orientation: Top-left (1) (default, tag absent)
+X resolution: unknown (tag absent)
+Y resolution: unknown (tag absent)
+Resolution unit: Inch (2) (default, tag absent)
+Pixel decoding (ocaml-tiff): supported (not attempted)
+
+Tags
+----
+ID       Name                         Type          Count  Value
+256      ImageWidth                   short             1  8
+257      ImageLength                  short             1  8
+258      BitsPerSample                short             1  16
+259      Compression                  short             1  1
+262      PhotometricInterpretation    short             1  1
+273      StripOffsets                 long8             1  16
+277      SamplesPerPixel              short             1  1
+278      RowsPerStrip                 short             1  8
+279      StripByteCounts              long8             1  128
+339      SampleFormat                 short             1  1
+

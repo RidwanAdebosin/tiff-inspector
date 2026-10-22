@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ocaml:
+    name: OCaml (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.4"
+      - name: Install dependencies
+        run: |
+          opam install . --deps-only --with-test --yes
+          opam install ocamlformat.0.29.0 --yes
+      - name: Check formatting
+        run: opam exec -- dune build @fmt
+      - name: Build
+        run: opam exec -- dune build
+      - name: Test (unit, mutation, golden, server)
+        run: opam exec -- dune test
+      - name: Fixtures are reproducible
+        run: |
+          python3 scripts/gen-fixtures/gen_fixtures.py test/fixtures --verify
+          git diff --exit-code test/fixtures
+      - name: HTTP smoke test
+        run: opam exec -- test/server/smoke.sh
+
+  web:
+    name: Web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run check:types
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - name: Golden JSON conforms to the schema
+        run: npm run validate:goldens

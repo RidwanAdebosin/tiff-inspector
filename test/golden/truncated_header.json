@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "ok": false,
+  "tool": { "name": "tiff-inspector", "version": "0.1.0" },
+  "file": { "name": "truncated_header.tif", "size_bytes": 5 },
+  "error": {
+    "code": "truncated",
+    "message": "Read of 16 bytes at offset 0 goes past the end of the file (5 bytes)"
+  }
+}

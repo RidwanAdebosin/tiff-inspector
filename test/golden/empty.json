@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0",
+  "ok": false,
+  "tool": { "name": "tiff-inspector", "version": "0.1.0" },
+  "file": { "name": "empty.tif", "size_bytes": 0 },
+  "error": { "code": "not_a_tiff", "message": "The file is empty" }
+}

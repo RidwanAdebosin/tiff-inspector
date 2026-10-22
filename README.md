@@ -121,4 +121,3 @@ CI runs the same commands (`.github/workflows/ci.yml`). See
 
 MIT. ocaml-tiff is MIT-licensed by the geocaml developers
 (`vendor/ocaml-tiff/LICENSE`).
-# tiff-inspect

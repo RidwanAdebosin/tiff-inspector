@@ -1,0 +1,4 @@
+(library
+ (name tiff_inspector)
+ (public_name tiff-inspector.core)
+ (libraries tiff tiff.unix yojson fmt cstruct optint unix))

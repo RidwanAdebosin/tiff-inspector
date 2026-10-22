@@ -1,0 +1,207 @@
+import type { Directory, SuccessReport } from "../../api/types";
+
+/**
+ * Realistic mock of a POST /api/v1/inspections success body. Validated against
+ * the JSON Schema in src/test/schema.test.ts.
+ *
+ * - IFD 0: 16-bit RGB, separate planar configuration (3 planes), LZW +
+ *   horizontal predictor, strips, an unknown private tag, a long ASCII
+ *   description, a float tag with a non-finite (null) item, and a
+ *   StripOffsets value truncated to the inline value limit.
+ * - IFD 1: 8-bit contiguous RGB thumbnail where several fields are spec
+ *   defaults or absent, tiled layout, unrecognised compression code.
+ */
+
+const STRIP_COUNT = 300;
+const INLINE_LIMIT = 64;
+const stripOffsets = Array.from({ length: INLINE_LIMIT }, (_, i) => 4096 + i * 13_824);
+const stripByteCounts = Array.from({ length: INLINE_LIMIT }, () => 13_824);
+
+const LONG_DESCRIPTION =
+  "Aerial survey mosaic, flight line 7 of 12. Captured with a calibrated 3-band sensor at 0.25 m ground sample distance; radiometric correction applied, no colour balancing. Processing pipeline v4.2.";
+
+const ifd0: Directory = {
+  index: 0,
+  offset: 8,
+  entry_count: 16,
+  width: { status: "present", value: 2048, note: null },
+  height: { status: "present", value: 1536, note: null },
+  samples_per_pixel: { status: "present", value: 3, note: null },
+  bits_per_sample: { status: "present", value: [16, 16, 16], note: null },
+  sample_format: {
+    status: "present",
+    value: [
+      { code: 1, name: "unsigned_integer", label: "Unsigned integer" },
+      { code: 1, name: "unsigned_integer", label: "Unsigned integer" },
+      { code: 1, name: "unsigned_integer", label: "Unsigned integer" },
+    ],
+    note: null,
+  },
+  photometric_interpretation: { status: "present", value: { code: 2, name: "rgb", label: "RGB" }, note: null },
+  planar_configuration: { status: "present", value: { code: 2, name: "separate", label: "Separate" }, note: null },
+  compression: { status: "present", value: { code: 5, name: "lzw", label: "LZW" }, note: null },
+  predictor: { status: "present", value: { code: 2, name: "horizontal", label: "horizontal" }, note: null },
+  orientation: {
+    status: "default",
+    value: { code: 1, name: "top_left", label: "Top-left" },
+    note: "Orientation tag absent; TIFF 6.0 default is 1 (top-left).",
+  },
+  resolution: {
+    x: { status: "present", value: 300, note: null },
+    y: { status: "present", value: 300, note: null },
+    unit: { status: "present", value: { code: 2, name: "inch", label: "Inch" }, note: null },
+  },
+  layout: {
+    kind: "strips",
+    rows_per_strip: { status: "present", value: 16, note: null },
+    tile_width: null,
+    tile_height: null,
+    chunk_count: STRIP_COUNT,
+    expected_chunk_count: 288,
+    offsets: stripOffsets,
+    byte_counts: stripByteCounts,
+    total_bytes: null,
+    truncated: true,
+  },
+  planes: [0, 1, 2].map((i) => ({ index: i, width: 2048, height: 1536, samples: [i], bits_per_sample: [16] })),
+  pixel_decoding: {
+    status: "not_attempted",
+    library_support: "unsupported",
+    reason: "LZW with a horizontal predictor on 16-bit planar data is not handled by ocaml-tiff.",
+  },
+  tags: [
+    { id: 256, name: "ImageWidth", known: true, field_type: { code: 4, name: "long", label: "long" }, count: 1, value: { kind: "integers", items: [2048] }, value_status: "decoded", note: null },
+    { id: 257, name: "ImageLength", known: true, field_type: { code: 4, name: "long", label: "long" }, count: 1, value: { kind: "integers", items: [1536] }, value_status: "decoded", note: null },
+    { id: 258, name: "BitsPerSample", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 3, value: { kind: "integers", items: [16, 16, 16] }, value_status: "decoded", note: null },
+    { id: 259, name: "Compression", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [5] }, value_status: "decoded", note: null },
+    { id: 262, name: "PhotometricInterpretation", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [2] }, value_status: "decoded", note: null },
+    { id: 270, name: "ImageDescription", known: true, field_type: { code: 2, name: "ascii", label: "ascii" }, count: LONG_DESCRIPTION.length + 1, value: { kind: "ascii", text: LONG_DESCRIPTION }, value_status: "decoded", note: null },
+    {
+      id: 273,
+      name: "StripOffsets",
+      known: true,
+      field_type: { code: 4, name: "long", label: "long" },
+      count: STRIP_COUNT,
+      value: { kind: "integers", items: stripOffsets },
+      value_status: "truncated",
+      note: `Only the first ${INLINE_LIMIT} values are included.`,
+    },
+    { id: 277, name: "SamplesPerPixel", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [3] }, value_status: "decoded", note: null },
+    { id: 278, name: "RowsPerStrip", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [16] }, value_status: "decoded", note: null },
+    {
+      id: 279,
+      name: "StripByteCounts",
+      known: true,
+      field_type: { code: 4, name: "long", label: "long" },
+      count: STRIP_COUNT,
+      value: { kind: "integers", items: stripByteCounts },
+      value_status: "truncated",
+      note: `Only the first ${INLINE_LIMIT} values are included.`,
+    },
+    { id: 282, name: "XResolution", known: true, field_type: { code: 5, name: "rational", label: "rational" }, count: 1, value: { kind: "rationals", items: [[300, 1]] }, value_status: "decoded", note: null },
+    { id: 283, name: "YResolution", known: true, field_type: { code: 5, name: "rational", label: "rational" }, count: 1, value: { kind: "rationals", items: [[300, 1]] }, value_status: "decoded", note: null },
+    { id: 284, name: "PlanarConfiguration", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [2] }, value_status: "decoded", note: null },
+    { id: 296, name: "ResolutionUnit", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [2] }, value_status: "decoded", note: null },
+    { id: 317, name: "Predictor", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [2] }, value_status: "decoded", note: null },
+    { id: 33550, name: "ModelPixelScaleTag", known: true, field_type: { code: 12, name: "double", label: "double" }, count: 3, value: { kind: "floats", items: [0.25, 0.25, null] }, value_status: "decoded", note: null },
+    { id: 65000, name: null, known: false, field_type: { code: 7, name: "undefined", label: "Undefined" }, count: 4, value: { kind: "integers", items: [222, 173, 190, 239] }, value_status: "decoded", note: "Private tag not in the registry." },
+  ],
+  warnings: [
+    {
+      code: "chunk_count_mismatch",
+      message: "StripOffsets lists 300 strips but the image dimensions imply 288.",
+      directory: 0,
+      tag: 273,
+    },
+  ],
+};
+
+const ifd1: Directory = {
+  index: 1,
+  offset: 4_194_400,
+  entry_count: 9,
+  width: { status: "present", value: 256, note: null },
+  height: { status: "present", value: 192, note: null },
+  samples_per_pixel: { status: "present", value: 3, note: null },
+  bits_per_sample: { status: "present", value: [8, 8, 8], note: null },
+  sample_format: {
+    status: "default",
+    value: [
+      { code: 1, name: "unsigned_integer", label: "Unsigned integer" },
+      { code: 1, name: "unsigned_integer", label: "Unsigned integer" },
+      { code: 1, name: "unsigned_integer", label: "Unsigned integer" },
+    ],
+    note: null,
+  },
+  photometric_interpretation: { status: "present", value: { code: 2, name: "rgb", label: "RGB" }, note: null },
+  planar_configuration: { status: "default", value: { code: 1, name: "contiguous", label: "Contiguous (chunky)" }, note: null },
+  compression: { status: "present", value: { code: 34712, name: null, label: null }, note: null },
+  predictor: { status: "default", value: { code: 1, name: "none", label: "None" }, note: null },
+  orientation: { status: "default", value: { code: 1, name: "top_left", label: "Top-left" }, note: null },
+  resolution: {
+    x: { status: "absent", value: null, note: null },
+    y: { status: "absent", value: null, note: null },
+    unit: { status: "default", value: { code: 2, name: "inch", label: "Inch" }, note: null },
+  },
+  layout: {
+    kind: "tiles",
+    rows_per_strip: null,
+    tile_width: { status: "present", value: 128, note: null },
+    tile_height: { status: "present", value: 128, note: null },
+    chunk_count: 4,
+    expected_chunk_count: 4,
+    offsets: [4_194_600, 4_204_600, 4_214_600, 4_224_600],
+    byte_counts: [10_000, 10_000, 10_000, 9_500],
+    total_bytes: 39_500,
+    truncated: false,
+  },
+  planes: [{ index: 0, width: 256, height: 192, samples: [0, 1, 2], bits_per_sample: [8, 8, 8] }],
+  pixel_decoding: {
+    status: "not_attempted",
+    library_support: "unknown",
+    reason: "Compression code 34712 is not recognised.",
+  },
+  tags: [
+    { id: 256, name: "ImageWidth", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [256] }, value_status: "decoded", note: null },
+    { id: 257, name: "ImageLength", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [192] }, value_status: "decoded", note: null },
+    { id: 258, name: "BitsPerSample", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 3, value: { kind: "integers", items: [8, 8, 8] }, value_status: "decoded", note: null },
+    { id: 259, name: "Compression", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [34712] }, value_status: "decoded", note: null },
+    { id: 262, name: "PhotometricInterpretation", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [2] }, value_status: "decoded", note: null },
+    { id: 277, name: "SamplesPerPixel", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [3] }, value_status: "decoded", note: null },
+    { id: 322, name: "TileWidth", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [128] }, value_status: "decoded", note: null },
+    { id: 323, name: "TileLength", known: true, field_type: { code: 3, name: "short", label: "short" }, count: 1, value: { kind: "integers", items: [128] }, value_status: "decoded", note: null },
+    { id: 50000, name: null, known: false, field_type: { code: 99, name: null, label: null }, count: 2, value: null, value_status: "unsupported_type", note: "Field type 99 is not defined by TIFF 6.0 or BigTIFF." },
+  ],
+  warnings: [],
+};
+
+export const successReport: SuccessReport = {
+  schema_version: "1.0",
+  ok: true,
+  tool: { name: "tiff-inspector", version: "0.1.0" },
+  file: {
+    name: "survey-mosaic.tif",
+    size_bytes: 4_234_100,
+    byte_order: "little_endian",
+    format: "classic_tiff",
+    first_ifd_offset: 8,
+  },
+  ifd_count: 2,
+  ifd_walk: { status: "complete", limit: 1024, error: null },
+  directories: [ifd0, ifd1],
+  warnings: [
+    {
+      code: "trailing_data",
+      message: "2,048 bytes after the last referenced data are not covered by any IFD.",
+      directory: null,
+      tag: null,
+    },
+  ],
+  limitations: [
+    "Pixel data is not decoded in version 1.",
+    "Values longer than 64 items are truncated in the report.",
+  ],
+};
+
+/** The raw body as a server would send it: formatting the UI must preserve on export. */
+export const successBody = JSON.stringify(successReport, null, 2) + "\n";

@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "ok": false,
+  "tool": { "name": "tiff-inspector", "version": "0.1.0" },
+  "file": { "name": "ifd_offset_out_of_range.tif", "size_bytes": 16 },
+  "error": {
+    "code": "malformed",
+    "message": "IFD offset 2147483632 points outside the file (16 bytes)"
+  }
+}

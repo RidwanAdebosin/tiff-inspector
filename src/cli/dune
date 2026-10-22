@@ -1,0 +1,5 @@
+(executable
+ (name main)
+ (public_name tiff-inspector)
+ (package tiff-inspector)
+ (libraries tiff_inspector cmdliner))

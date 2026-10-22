@@ -1,0 +1,57 @@
+TIFF INSPECTOR
+==============
+
+File: tiled.tif
+File size: 1192 bytes (1.2 KiB)
+Byte order: Little-endian
+Format: Classic TIFF
+Image directories: 1
+
+Image
+-----
+Width: 32
+Height: 32
+
+Samples
+-------
+Samples per pixel: 1
+Sample format: Unsigned integer (1) (default, tag absent)
+Bits per sample: 8
+
+Storage
+-------
+Photometric interpretation: BlackIsZero (1)
+Planar configuration: Contiguous (chunky) (1) (default, tag absent)
+Compression: None (1)
+Predictor: None (1) (default, tag absent)
+Tile width: 16
+Tile height: 16
+Tiles: 4
+Image data: 1024 bytes (1.0 KiB)
+
+Planes
+------
+Plane 0: 32x32, samples [0], bits [8]
+
+Other
+-----
+Orientation: Top-left (1) (default, tag absent)
+X resolution: unknown (tag absent)
+Y resolution: unknown (tag absent)
+Resolution unit: Inch (2) (default, tag absent)
+Pixel decoding (ocaml-tiff): supported (not attempted)
+
+Tags
+----
+ID       Name                         Type          Count  Value
+256      ImageWidth                   short             1  32
+257      ImageLength                  short             1  32
+258      BitsPerSample                short             1  8
+259      Compression                  short             1  1
+262      PhotometricInterpretation    short             1  1
+277      SamplesPerPixel              short             1  1
+322      TileWidth                    short             1  16
+323      TileLength                   short             1  16
+324      TileOffsets                  long              4  8, 264, 520, 776
+325      TileByteCounts               long              4  256, 256, 256, 256
+

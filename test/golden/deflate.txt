@@ -1,0 +1,56 @@
+TIFF INSPECTOR
+==============
+
+File: deflate.tif
+File size: 206 bytes
+Byte order: Little-endian
+Format: Classic TIFF
+Image directories: 1
+
+Image
+-----
+Width: 8
+Height: 8
+
+Samples
+-------
+Samples per pixel: 1
+Sample format: Unsigned integer (1) (default, tag absent)
+Bits per sample: 8
+
+Storage
+-------
+Photometric interpretation: BlackIsZero (1)
+Planar configuration: Contiguous (chunky) (1) (default, tag absent)
+Compression: Deflate (Adobe) (8)
+Predictor: None (1)
+Rows per strip: 8
+Strips: 1
+Image data: 70 bytes
+
+Planes
+------
+Plane 0: 8x8, samples [0], bits [8]
+
+Other
+-----
+Orientation: Top-left (1) (default, tag absent)
+X resolution: unknown (tag absent)
+Y resolution: unknown (tag absent)
+Resolution unit: Inch (2) (default, tag absent)
+Pixel decoding (ocaml-tiff): supported (not attempted)
+
+Tags
+----
+ID       Name                         Type          Count  Value
+256      ImageWidth                   short             1  8
+257      ImageLength                  short             1  8
+258      BitsPerSample                short             1  8
+259      Compression                  short             1  8
+262      PhotometricInterpretation    short             1  1
+273      StripOffsets                 long              1  8
+277      SamplesPerPixel              short             1  1
+278      RowsPerStrip                 short             1  8
+279      StripByteCounts              long              1  70
+317      Predictor                    short             1  1
+

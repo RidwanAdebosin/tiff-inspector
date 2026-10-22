@@ -1,0 +1,39 @@
+(library
+ (name tiff_inspector_server)
+ (modules
+  config
+  multipart
+  signature
+  rate_limit
+  tempdir
+  worker
+  conn
+  static
+  routes)
+ (libraries
+  tiff_inspector
+  eio
+  eio.unix
+  cohttp
+  cohttp-eio
+  http
+  uri
+  cmdliner
+  yojson
+  fmt
+  cstruct
+  unix))
+
+(executable
+ (name main)
+ (public_name tiff-inspector-server)
+ (package tiff-inspector)
+ (modules main)
+ (libraries
+  tiff_inspector
+  tiff_inspector_server
+  eio
+  eio.unix
+  eio_main
+  cmdliner
+  unix))

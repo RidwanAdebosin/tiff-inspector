@@ -1,0 +1,873 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tiff-inspector/tiff-inspector/schema/inspection-report.v1.json",
+  "title": "InspectionReport",
+  "description": "Output of `tiff-inspector inspect --format json` and of POST /api/v1/inspections. Version 1.x; additive changes bump the minor version, breaking changes create v2.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/SuccessReport"
+    },
+    {
+      "$ref": "#/$defs/FailureReport"
+    }
+  ],
+  "$defs": {
+    "SuccessReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "ok",
+        "tool",
+        "file",
+        "ifd_count",
+        "ifd_walk",
+        "directories",
+        "warnings",
+        "limitations"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "ok": {
+          "const": true
+        },
+        "tool": {
+          "$ref": "#/$defs/Tool"
+        },
+        "file": {
+          "$ref": "#/$defs/FileInfo"
+        },
+        "ifd_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ifd_walk": {
+          "$ref": "#/$defs/IfdWalk"
+        },
+        "directories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Directory"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Problem"
+          }
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "FailureReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "ok",
+        "tool",
+        "file",
+        "error"
+      ],
+      "properties": {
+        "schema_version": {
+          "const": "1.0"
+        },
+        "ok": {
+          "const": false
+        },
+        "tool": {
+          "$ref": "#/$defs/Tool"
+        },
+        "file": {
+          "description": "Whatever is known about the file; null when it could not be opened.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "name",
+                "size_bytes"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "size_bytes": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error": {
+          "$ref": "#/$defs/Error"
+        }
+      }
+    },
+    "Tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "tiff-inspector"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "ErrorCode": {
+      "enum": [
+        "file_not_found",
+        "file_unreadable",
+        "not_a_tiff",
+        "truncated",
+        "malformed",
+        "unsupported_feature",
+        "pixel_decode_failed",
+        "limit_exceeded",
+        "internal",
+        "invalid_request",
+        "file_too_large",
+        "rate_limited"
+      ]
+    },
+    "Error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "$ref": "#/$defs/ErrorCode"
+        },
+        "message": {
+          "type": "string"
+        }
+      }
+    },
+    "Problem": {
+      "description": "A non-fatal warning. `code` is a stable snake_case identifier; `message` is for humans.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "directory",
+        "tag"
+      ],
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "directory": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "tag": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      }
+    },
+    "FileInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "size_bytes",
+        "byte_order",
+        "format",
+        "first_ifd_offset"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "byte_order": {
+          "enum": [
+            "little_endian",
+            "big_endian"
+          ]
+        },
+        "format": {
+          "enum": [
+            "classic_tiff",
+            "bigtiff"
+          ]
+        },
+        "first_ifd_offset": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "IfdWalk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "limit",
+        "error"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "complete",
+            "truncated_at_limit",
+            "failed"
+          ]
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Error"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "FieldStatus": {
+      "description": "present: read from a tag. default: tag absent, TIFF spec default applied. absent: tag absent, no default. unsupported: present but cannot be interpreted. error: reading failed.",
+      "enum": [
+        "present",
+        "default",
+        "absent",
+        "unsupported",
+        "error"
+      ]
+    },
+    "Enum": {
+      "description": "A coded TIFF value. `name` (stable snake_case) and `label` (human-readable) are null when the code is not recognised.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "name",
+        "label"
+      ],
+      "properties": {
+        "code": {
+          "type": "integer"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "label": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "IntField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "note"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/FieldStatus"
+        },
+        "value": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "NumberField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "note"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/FieldStatus"
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "IntListField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "note"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/FieldStatus"
+        },
+        "value": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "EnumField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "note"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/FieldStatus"
+        },
+        "value": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Enum"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "EnumListField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "note"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/FieldStatus"
+        },
+        "value": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Enum"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Directory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index",
+        "offset",
+        "entry_count",
+        "width",
+        "height",
+        "samples_per_pixel",
+        "bits_per_sample",
+        "sample_format",
+        "photometric_interpretation",
+        "planar_configuration",
+        "compression",
+        "predictor",
+        "orientation",
+        "resolution",
+        "layout",
+        "planes",
+        "pixel_decoding",
+        "tags",
+        "warnings"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "entry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "width": {
+          "$ref": "#/$defs/IntField"
+        },
+        "height": {
+          "$ref": "#/$defs/IntField"
+        },
+        "samples_per_pixel": {
+          "$ref": "#/$defs/IntField"
+        },
+        "bits_per_sample": {
+          "$ref": "#/$defs/IntListField"
+        },
+        "sample_format": {
+          "description": "One entry per sample.",
+          "allOf": [
+            {
+              "$ref": "#/$defs/EnumListField"
+            }
+          ]
+        },
+        "photometric_interpretation": {
+          "$ref": "#/$defs/EnumField"
+        },
+        "planar_configuration": {
+          "$ref": "#/$defs/EnumField"
+        },
+        "compression": {
+          "$ref": "#/$defs/EnumField"
+        },
+        "predictor": {
+          "$ref": "#/$defs/EnumField"
+        },
+        "orientation": {
+          "$ref": "#/$defs/EnumField"
+        },
+        "resolution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "x",
+            "y",
+            "unit"
+          ],
+          "properties": {
+            "x": {
+              "$ref": "#/$defs/NumberField"
+            },
+            "y": {
+              "$ref": "#/$defs/NumberField"
+            },
+            "unit": {
+              "$ref": "#/$defs/EnumField"
+            }
+          }
+        },
+        "layout": {
+          "$ref": "#/$defs/Layout"
+        },
+        "planes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Plane"
+          }
+        },
+        "pixel_decoding": {
+          "$ref": "#/$defs/PixelDecoding"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Tag"
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Problem"
+          }
+        }
+      }
+    },
+    "Layout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "rows_per_strip",
+        "tile_width",
+        "tile_height",
+        "chunk_count",
+        "expected_chunk_count",
+        "offsets",
+        "byte_counts",
+        "total_bytes",
+        "truncated"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "strips",
+            "tiles",
+            "unknown"
+          ]
+        },
+        "rows_per_strip": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/IntField"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tile_width": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/IntField"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tile_height": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/IntField"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "chunk_count": {
+          "type": "integer",
+          "description": "Number of strips or tiles listed in the file.",
+          "minimum": 0
+        },
+        "expected_chunk_count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Derived from dimensions; null when not determinable."
+        },
+        "offsets": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "byte_counts": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "total_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "truncated": {
+          "type": "boolean",
+          "description": "True when offsets/byte_counts were cut to the inline value limit."
+        }
+      }
+    },
+    "Plane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index",
+        "width",
+        "height",
+        "samples",
+        "bits_per_sample"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer"
+        },
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        },
+        "samples": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "description": "Sample indices stored in this plane."
+        },
+        "bits_per_sample": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "PixelDecoding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "library_support",
+        "reason"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "not_attempted"
+          ],
+          "description": "Version 1 never decodes pixels."
+        },
+        "library_support": {
+          "enum": [
+            "supported",
+            "unsupported",
+            "unknown"
+          ],
+          "description": "Static assessment of whether ocaml-tiff's decoder handles this directory."
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "TagValue": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "items"
+          ],
+          "properties": {
+            "kind": {
+              "const": "integers"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "items"
+          ],
+          "properties": {
+            "kind": {
+              "const": "floats"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "description": "Non-finite values (NaN, infinity) are null."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "items"
+          ],
+          "properties": {
+            "kind": {
+              "const": "rationals"
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "integer"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "const": "ascii"
+            },
+            "text": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "Tag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "known",
+        "field_type",
+        "count",
+        "value",
+        "value_status",
+        "note"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "known": {
+          "type": "boolean",
+          "description": "Whether the tag ID is in tiff-inspector's registry."
+        },
+        "field_type": {
+          "$ref": "#/$defs/Enum"
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "value": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/TagValue"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "value_status": {
+          "enum": [
+            "decoded",
+            "truncated",
+            "unreadable",
+            "unsupported_type"
+          ]
+        },
+        "note": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

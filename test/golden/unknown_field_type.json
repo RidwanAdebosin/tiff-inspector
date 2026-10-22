@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "ok": false,
+  "tool": { "name": "tiff-inspector", "version": "0.1.0" },
+  "file": { "name": "unknown_field_type.tif", "size_bytes": 344 },
+  "error": {
+    "code": "unsupported_feature",
+    "message": "Tag 65002 uses unknown field type 99; ocaml-tiff cannot parse this directory"
+  }
+}

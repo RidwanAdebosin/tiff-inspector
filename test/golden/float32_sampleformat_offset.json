@@ -1,0 +1,222 @@
+{
+  "schema_version": "1.0",
+  "ok": true,
+  "tool": { "name": "tiff-inspector", "version": "0.1.0" },
+  "file": {
+    "name": "float32_sampleformat_offset.tif",
+    "size_bytes": 354,
+    "byte_order": "little_endian",
+    "format": "classic_tiff",
+    "first_ifd_offset": 200
+  },
+  "ifd_count": 1,
+  "ifd_walk": { "status": "complete", "limit": 1024, "error": null },
+  "directories": [
+    {
+      "index": 0,
+      "offset": 200,
+      "entry_count": 11,
+      "width": { "status": "present", "value": 4, "note": null },
+      "height": { "status": "present", "value": 4, "note": null },
+      "samples_per_pixel": { "status": "present", "value": 3, "note": null },
+      "bits_per_sample": {
+        "status": "present",
+        "value": [ 32, 32, 32 ],
+        "note": null
+      },
+      "sample_format": {
+        "status": "present",
+        "value": [
+          { "code": 3, "name": "ieee_float", "label": "IEEE floating point" },
+          { "code": 3, "name": "ieee_float", "label": "IEEE floating point" },
+          { "code": 3, "name": "ieee_float", "label": "IEEE floating point" }
+        ],
+        "note": null
+      },
+      "photometric_interpretation": {
+        "status": "present",
+        "value": { "code": 2, "name": "rgb", "label": "RGB" },
+        "note": null
+      },
+      "planar_configuration": {
+        "status": "present",
+        "value": {
+          "code": 1,
+          "name": "contiguous",
+          "label": "Contiguous (chunky)"
+        },
+        "note": null
+      },
+      "compression": {
+        "status": "present",
+        "value": { "code": 1, "name": "none", "label": "None" },
+        "note": null
+      },
+      "predictor": {
+        "status": "default",
+        "value": { "code": 1, "name": "none", "label": "None" },
+        "note": null
+      },
+      "orientation": {
+        "status": "default",
+        "value": { "code": 1, "name": "top_left", "label": "Top-left" },
+        "note": null
+      },
+      "resolution": {
+        "x": { "status": "absent", "value": null, "note": null },
+        "y": { "status": "absent", "value": null, "note": null },
+        "unit": {
+          "status": "default",
+          "value": { "code": 2, "name": "inch", "label": "Inch" },
+          "note": null
+        }
+      },
+      "layout": {
+        "kind": "strips",
+        "rows_per_strip": { "status": "present", "value": 4, "note": null },
+        "tile_width": null,
+        "tile_height": null,
+        "chunk_count": 1,
+        "expected_chunk_count": 1,
+        "offsets": [ 8 ],
+        "byte_counts": [ 192 ],
+        "total_bytes": 192,
+        "truncated": false
+      },
+      "planes": [
+        {
+          "index": 0,
+          "width": 4,
+          "height": 4,
+          "samples": [ 0, 1, 2 ],
+          "bits_per_sample": [ 32, 32, 32 ]
+        }
+      ],
+      "pixel_decoding": {
+        "status": "not_attempted",
+        "library_support": "supported",
+        "reason": null
+      },
+      "tags": [
+        {
+          "id": 256,
+          "name": "ImageWidth",
+          "known": true,
+          "field_type": { "code": 3, "name": "short", "label": "short" },
+          "count": 1,
+          "value": { "kind": "integers", "items": [ 4 ] },
+          "value_status": "decoded",
+          "note": null
+        },
+        {
+          "id": 257,
+          "name": "ImageLength",
+          "known": true,
+          "field_type": { "code": 3, "name": "short", "label": "short" },
+          "count": 1,
+          "value": { "kind": "integers", "items": [ 4 ] },
+          "value_status": "decoded",
+          "note": null
+        },
+        {
+          "id": 258,
+          "name": "BitsPerSample",
+          "known": true,
+          "field_type": { "code": 3, "name": "short", "label": "short" },
+          "count": 3,
+          "value": { "kind": "integers", "items": [ 32, 32, 32 ] },
+          "value_status": "decoded",
+          "note": null
+        },
+        {
+          "id": 259,
+          "name": "Compression",
+          "known": true,
+          "field_type": { "code": 3, "name": "short", "label": "short" },
+          "count": 1,
+          "value": { "kind": "integers", "items": [ 1 ] },
+          "value_status": "decoded",
+          "note": null
+        },
+        {
+          "id": 262,
+          "name": "PhotometricInterpretation",
+          "known": true,
+          "field_type": { "code": 3, "name": "short", "label": "short" },
+          "count": 1,
+          "value": { "kind": "integers", "items": [ 2 ] },
+          "value_status": "decoded",
+          "note": null
+        },
+        {
+          "id": 273,
+          "name": "StripOffsets",
+          "known": true,
+          "field_type": { "code": 4, "name": "long", "label": "long" },
+          "count": 1,
+          "value": { "kind": "integers", "items": [ 8 ] },
+          "value_status": "decoded",
+          "note": null
+        },
+        {
+          "id": 277,
+          "name": "SamplesPerPixel",
+          "known": true,
+          "field_type": { "code": 3, "name": "short", "label": "short" },
+          "count": 1,
+          "value": { "kind": "integers", "items": [ 3 ] },
+          "value_status": "decoded",
+          "note": null
+        },
+        {
+          "id": 278,
+          "name": "RowsPerStrip",
+          "known": true,
+          "field_type": { "code": 3, "name": "short", "label": "short" },
+          "count": 1,
+          "value": { "kind": "integers", "items": [ 4 ] },
+          "value_status": "decoded",
+          "note": null
+        },
+        {
+          "id": 279,
+          "name": "StripByteCounts",
+          "known": true,
+          "field_type": { "code": 4, "name": "long", "label": "long" },
+          "count": 1,
+          "value": { "kind": "integers", "items": [ 192 ] },
+          "value_status": "decoded",
+          "note": null
+        },
+        {
+          "id": 284,
+          "name": "PlanarConfiguration",
+          "known": true,
+          "field_type": { "code": 3, "name": "short", "label": "short" },
+          "count": 1,
+          "value": { "kind": "integers", "items": [ 1 ] },
+          "value_status": "decoded",
+          "note": null
+        },
+        {
+          "id": 339,
+          "name": "SampleFormat",
+          "known": true,
+          "field_type": { "code": 3, "name": "short", "label": "short" },
+          "count": 3,
+          "value": { "kind": "integers", "items": [ 3, 3, 3 ] },
+          "value_status": "decoded",
+          "note": null
+        }
+      ],
+      "warnings": []
+    }
+  ],
+  "warnings": [],
+  "limitations": [
+    "Pixel data is not decoded in schema v1; pixel_decoding.library_support is a static assessment of ocaml-tiff's decoder.",
+    "Only the main IFD chain is followed; SubIFDs, EXIF and GPS directories are not traversed.",
+    "A directory containing an entry with an unknown field type cannot be parsed by ocaml-tiff.",
+    "Tag values are shown up to a fixed limit (ASCII up to 4096 bytes); longer values are marked truncated."
+  ]
+}

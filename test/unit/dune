@@ -1,0 +1,6 @@
+(test
+ (name test_inspect)
+ (package tiff-inspector)
+ (libraries tiff_inspector alcotest yojson)
+ (deps
+  (glob_files %{project_root}/test/fixtures/*.tif)))

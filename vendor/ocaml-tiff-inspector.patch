@@ -1,0 +1,79 @@
+diff -ru ocaml-tiff/src/ifd.ml ocaml-tiff/src/ifd.ml
+--- ocaml-tiff/src/ifd.ml	2026-10-22 14:55:31
++++ ocaml-tiff/src/ifd.ml	2026-10-22 15:01:28
+@@ -906,10 +906,15 @@
+   with Not_found -> No_predictor
+ 
+ let sample_format t =
+-  try
+-    let entry = lookup_exn t.entries SampleFormat in
+-    Int64.to_int (get_immediate entry) |> sample_format_of_int
+-  with Not_found -> UnsignedInteger
++  match lookup t.entries SampleFormat with
++  | None -> UnsignedInteger
++  | Some { offset = Immediate i; _ } -> Int64.to_int i |> sample_format_of_int
++  | Some entry -> (
++      (* With more than one sample the values do not fit inline and are stored
++         at an offset; all samples are expected to share a format. *)
++      match read_entry_raw ~count:1 entry t.ro with
++      | buf :: _ -> Endian.uint16 t.header.byte_order buf |> sample_format_of_int
++      | [] -> UnsignedInteger)
+ 
+ let tile_width t =
+   let entry = lookup_exn t.entries TileWidth in
+@@ -1297,3 +1302,20 @@
+   in
+ 
+   (entry, file_offset)
++
++(* Entry introspection *)
++
++type entry_location = Inline of int64 | At_offset of int64
++
++let entry_tag_id e = tag_to_int e.tag
++let entry_field_type e = field_to_int e.field
++let entry_count e = e.count
++
++let entry_location e =
++  match e.offset with
++  | Immediate i -> Inline i
++  | Offset o -> At_offset o
++  | Read (o, _) -> At_offset (Optint.Int63.to_int64 o)
++
++let header t = t.header
++let next_ifd_offset t = t.next_ifd
+diff -ru ocaml-tiff/src/ifd.mli ocaml-tiff/src/ifd.mli
+--- ocaml-tiff/src/ifd.mli	2026-10-22 14:55:31
++++ ocaml-tiff/src/ifd.mli	2026-10-22 15:01:28
+@@ -266,3 +266,31 @@
+ 
+ val v_of_entries : entry list -> int list -> int list -> header -> File.ro -> t
+ val make_entry : endianness -> int -> tag -> entry_values -> entry * int
++
++(** {2 Entry introspection} *)
++
++type entry_location =
++  | Inline of int64
++      (** A single value stored directly in the entry, already decoded. *)
++  | At_offset of int64
++      (** The raw value/offset word of the entry. For multi-value entries whose
++          data fits in the entry this holds the inline bytes, re-read in the
++          file's byte order. *)
++
++val entry_tag_id : entry -> int
++(** The numeric tag of the entry. *)
++
++val entry_field_type : entry -> int
++(** The numeric TIFF field type of the entry (e.g. [3] for SHORT). *)
++
++val entry_count : entry -> int64
++(** The number of values in the entry. *)
++
++val entry_location : entry -> entry_location
++(** Where the entry's values live. *)
++
++val header : t -> header
++(** The header of the file this IFD was read from. *)
++
++val next_ifd_offset : t -> Optint.Int63.t
++(** The file offset of the next IFD, or zero if this is the last one. *)
