@@ -104,17 +104,24 @@ invalid arguments.
 See [`src/server/README.md`](../src/server/README.md) for flags. For each
 upload the server:
 
-1. Applies a per-IP token-bucket rate limit and a concurrency semaphore.
-2. Enforces the size limit (default 25 MiB) from `Content-Length` and while
-   reading.
-3. Parses multipart, writes the `file` part to a random name in a private
-   (0700) temp directory, and checks the TIFF signature.
-4. Spawns `tiff-inspector inspect --format json` under a timeout (10 s) and
-   an address-space limit.
+1. Applies a per-IP token-bucket rate limit (behind a proxy: the last
+   `X-Forwarded-For` hop, validated as an IP).
+2. Validates body framing (decimal `Content-Length` or exactly
+   `Transfer-Encoding: chunked`, never both, 411 when neither) and enforces
+   the size limit (default 25 MiB) from `Content-Length` and while reading.
+3. Under an upload-concurrency cap with idle and total timeouts, parses
+   multipart, writes the `file` part to a random name in a private (0700)
+   temp directory, and checks the TIFF signature.
+4. Takes a worker slot and spawns `tiff-inspector inspect --format json`
+   under a timeout (10 s) and an address-space limit; the slot is released as
+   soon as the worker exits.
 5. Maps the result to HTTP: 200, 415 `not_a_tiff`, 422 inspection failures
-   and timeouts, 500 internal.
+   and timeouts, 500 internal; the outcome is logged.
 6. Replaces `file.name` with the sanitised client filename and deletes the
    temp file in all cases.
+
+On SIGTERM it stops accepting, drains in-flight requests (health answers
+503) and exits.
 
 ## Frontend (`web/`)
 

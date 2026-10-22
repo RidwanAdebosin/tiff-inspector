@@ -1,6 +1,8 @@
 (library
  (name tiff_inspector_server)
  (modules
+  ip
+  framing
   config
   multipart
   signature
