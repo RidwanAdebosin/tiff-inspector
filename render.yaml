@@ -1,0 +1,19 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: tiff-inspector
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      # Sized for the free plan's 512 MB: 2 workers x 200 MB plus the server.
+      - key: TIFF_INSPECTOR_WORKERS
+        value: "2"
+      - key: TIFF_INSPECTOR_MEMORY_LIMIT_MB
+        value: "200"
+      # Render's proxy sets X-Forwarded-For; without this every visitor shares
+      # one rate-limit bucket.
+      - key: TIFF_INSPECTOR_TRUST_PROXY
+        value: "true"

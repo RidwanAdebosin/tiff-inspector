@@ -3,519 +3,789 @@
 (rule
  (deps ../fixtures/bad_magic.tif)
  (action
-  (with-stdout-to bad_magic.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags bad_magic.tif)))))))
+  (with-stdout-to
+   bad_magic.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags bad_magic.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff bad_magic.txt bad_magic.txt.out)))
+ (action
+  (diff bad_magic.txt bad_magic.txt.out)))
 
 (rule
  (deps ../fixtures/bad_magic.tif)
  (action
-  (with-stdout-to bad_magic.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json bad_magic.tif)))))))
+  (with-stdout-to
+   bad_magic.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json bad_magic.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff bad_magic.json bad_magic.json.out)))
+ (action
+  (diff bad_magic.json bad_magic.json.out)))
 
 (rule
  (deps ../fixtures/bigtiff.tif)
  (action
-  (with-stdout-to bigtiff.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags bigtiff.tif)))))))
+  (with-stdout-to
+   bigtiff.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags bigtiff.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff bigtiff.txt bigtiff.txt.out)))
+ (action
+  (diff bigtiff.txt bigtiff.txt.out)))
 
 (rule
  (deps ../fixtures/bigtiff.tif)
  (action
-  (with-stdout-to bigtiff.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json bigtiff.tif)))))))
+  (with-stdout-to
+   bigtiff.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json bigtiff.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff bigtiff.json bigtiff.json.out)))
+ (action
+  (diff bigtiff.json bigtiff.json.out)))
 
 (rule
  (deps ../fixtures/deflate.tif)
  (action
-  (with-stdout-to deflate.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags deflate.tif)))))))
+  (with-stdout-to
+   deflate.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags deflate.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff deflate.txt deflate.txt.out)))
+ (action
+  (diff deflate.txt deflate.txt.out)))
 
 (rule
  (deps ../fixtures/deflate.tif)
  (action
-  (with-stdout-to deflate.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json deflate.tif)))))))
+  (with-stdout-to
+   deflate.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json deflate.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff deflate.json deflate.json.out)))
+ (action
+  (diff deflate.json deflate.json.out)))
 
 (rule
  (deps ../fixtures/empty.tif)
  (action
-  (with-stdout-to empty.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags empty.tif)))))))
+  (with-stdout-to
+   empty.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags empty.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff empty.txt empty.txt.out)))
+ (action
+  (diff empty.txt empty.txt.out)))
 
 (rule
  (deps ../fixtures/empty.tif)
  (action
-  (with-stdout-to empty.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json empty.tif)))))))
+  (with-stdout-to
+   empty.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json empty.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff empty.json empty.json.out)))
+ (action
+  (diff empty.json empty.json.out)))
 
 (rule
  (deps ../fixtures/float32_sampleformat_offset.tif)
  (action
-  (with-stdout-to float32_sampleformat_offset.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags float32_sampleformat_offset.tif)))))))
+  (with-stdout-to
+   float32_sampleformat_offset.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       text
+       --tags
+       float32_sampleformat_offset.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff float32_sampleformat_offset.txt float32_sampleformat_offset.txt.out)))
+ (action
+  (diff float32_sampleformat_offset.txt float32_sampleformat_offset.txt.out)))
 
 (rule
  (deps ../fixtures/float32_sampleformat_offset.tif)
  (action
-  (with-stdout-to float32_sampleformat_offset.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json float32_sampleformat_offset.tif)))))))
+  (with-stdout-to
+   float32_sampleformat_offset.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       json
+       float32_sampleformat_offset.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff float32_sampleformat_offset.json float32_sampleformat_offset.json.out)))
+ (action
+  (diff
+   float32_sampleformat_offset.json
+   float32_sampleformat_offset.json.out)))
 
 (rule
  (deps ../fixtures/gray8.tif)
  (action
-  (with-stdout-to gray8.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags gray8.tif)))))))
+  (with-stdout-to
+   gray8.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags gray8.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff gray8.txt gray8.txt.out)))
+ (action
+  (diff gray8.txt gray8.txt.out)))
 
 (rule
  (deps ../fixtures/gray8.tif)
  (action
-  (with-stdout-to gray8.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json gray8.tif)))))))
+  (with-stdout-to
+   gray8.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json gray8.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff gray8.json gray8.json.out)))
+ (action
+  (diff gray8.json gray8.json.out)))
 
 (rule
  (deps ../fixtures/gray_alpha.tif)
  (action
-  (with-stdout-to gray_alpha.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags gray_alpha.tif)))))))
+  (with-stdout-to
+   gray_alpha.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags gray_alpha.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff gray_alpha.txt gray_alpha.txt.out)))
+ (action
+  (diff gray_alpha.txt gray_alpha.txt.out)))
 
 (rule
  (deps ../fixtures/gray_alpha.tif)
  (action
-  (with-stdout-to gray_alpha.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json gray_alpha.tif)))))))
+  (with-stdout-to
+   gray_alpha.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json gray_alpha.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff gray_alpha.json gray_alpha.json.out)))
+ (action
+  (diff gray_alpha.json gray_alpha.json.out)))
 
 (rule
  (deps ../fixtures/huge_strip_count.tif)
  (action
-  (with-stdout-to huge_strip_count.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags huge_strip_count.tif)))))))
+  (with-stdout-to
+   huge_strip_count.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       text
+       --tags
+       huge_strip_count.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff huge_strip_count.txt huge_strip_count.txt.out)))
+ (action
+  (diff huge_strip_count.txt huge_strip_count.txt.out)))
 
 (rule
  (deps ../fixtures/huge_strip_count.tif)
  (action
-  (with-stdout-to huge_strip_count.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json huge_strip_count.tif)))))))
+  (with-stdout-to
+   huge_strip_count.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json huge_strip_count.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff huge_strip_count.json huge_strip_count.json.out)))
+ (action
+  (diff huge_strip_count.json huge_strip_count.json.out)))
 
 (rule
  (deps ../fixtures/ifd_loop.tif)
  (action
-  (with-stdout-to ifd_loop.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags ifd_loop.tif)))))))
+  (with-stdout-to
+   ifd_loop.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags ifd_loop.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff ifd_loop.txt ifd_loop.txt.out)))
+ (action
+  (diff ifd_loop.txt ifd_loop.txt.out)))
 
 (rule
  (deps ../fixtures/ifd_loop.tif)
  (action
-  (with-stdout-to ifd_loop.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json ifd_loop.tif)))))))
+  (with-stdout-to
+   ifd_loop.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json ifd_loop.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff ifd_loop.json ifd_loop.json.out)))
+ (action
+  (diff ifd_loop.json ifd_loop.json.out)))
 
 (rule
  (deps ../fixtures/ifd_offset_out_of_range.tif)
  (action
-  (with-stdout-to ifd_offset_out_of_range.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags ifd_offset_out_of_range.tif)))))))
+  (with-stdout-to
+   ifd_offset_out_of_range.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       text
+       --tags
+       ifd_offset_out_of_range.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff ifd_offset_out_of_range.txt ifd_offset_out_of_range.txt.out)))
+ (action
+  (diff ifd_offset_out_of_range.txt ifd_offset_out_of_range.txt.out)))
 
 (rule
  (deps ../fixtures/ifd_offset_out_of_range.tif)
  (action
-  (with-stdout-to ifd_offset_out_of_range.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json ifd_offset_out_of_range.tif)))))))
+  (with-stdout-to
+   ifd_offset_out_of_range.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       json
+       ifd_offset_out_of_range.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff ifd_offset_out_of_range.json ifd_offset_out_of_range.json.out)))
+ (action
+  (diff ifd_offset_out_of_range.json ifd_offset_out_of_range.json.out)))
 
 (rule
  (deps ../fixtures/multi_ifd.tif)
  (action
-  (with-stdout-to multi_ifd.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags multi_ifd.tif)))))))
+  (with-stdout-to
+   multi_ifd.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags multi_ifd.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff multi_ifd.txt multi_ifd.txt.out)))
+ (action
+  (diff multi_ifd.txt multi_ifd.txt.out)))
 
 (rule
  (deps ../fixtures/multi_ifd.tif)
  (action
-  (with-stdout-to multi_ifd.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json multi_ifd.tif)))))))
+  (with-stdout-to
+   multi_ifd.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json multi_ifd.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff multi_ifd.json multi_ifd.json.out)))
+ (action
+  (diff multi_ifd.json multi_ifd.json.out)))
 
 (rule
  (deps ../fixtures/not_a_tiff.tif)
  (action
-  (with-stdout-to not_a_tiff.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags not_a_tiff.tif)))))))
+  (with-stdout-to
+   not_a_tiff.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags not_a_tiff.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff not_a_tiff.txt not_a_tiff.txt.out)))
+ (action
+  (diff not_a_tiff.txt not_a_tiff.txt.out)))
 
 (rule
  (deps ../fixtures/not_a_tiff.tif)
  (action
-  (with-stdout-to not_a_tiff.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json not_a_tiff.tif)))))))
+  (with-stdout-to
+   not_a_tiff.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json not_a_tiff.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff not_a_tiff.json not_a_tiff.json.out)))
+ (action
+  (diff not_a_tiff.json not_a_tiff.json.out)))
 
 (rule
  (deps ../fixtures/rgb_contig.tif)
  (action
-  (with-stdout-to rgb_contig.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags rgb_contig.tif)))))))
+  (with-stdout-to
+   rgb_contig.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags rgb_contig.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff rgb_contig.txt rgb_contig.txt.out)))
+ (action
+  (diff rgb_contig.txt rgb_contig.txt.out)))
 
 (rule
  (deps ../fixtures/rgb_contig.tif)
  (action
-  (with-stdout-to rgb_contig.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json rgb_contig.tif)))))))
+  (with-stdout-to
+   rgb_contig.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json rgb_contig.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff rgb_contig.json rgb_contig.json.out)))
+ (action
+  (diff rgb_contig.json rgb_contig.json.out)))
 
 (rule
  (deps ../fixtures/rgb_planar.tif)
  (action
-  (with-stdout-to rgb_planar.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags rgb_planar.tif)))))))
+  (with-stdout-to
+   rgb_planar.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags rgb_planar.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff rgb_planar.txt rgb_planar.txt.out)))
+ (action
+  (diff rgb_planar.txt rgb_planar.txt.out)))
 
 (rule
  (deps ../fixtures/rgb_planar.tif)
  (action
-  (with-stdout-to rgb_planar.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json rgb_planar.tif)))))))
+  (with-stdout-to
+   rgb_planar.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json rgb_planar.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff rgb_planar.json rgb_planar.json.out)))
+ (action
+  (diff rgb_planar.json rgb_planar.json.out)))
 
 (rule
  (deps ../fixtures/strip_out_of_bounds.tif)
  (action
-  (with-stdout-to strip_out_of_bounds.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags strip_out_of_bounds.tif)))))))
+  (with-stdout-to
+   strip_out_of_bounds.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       text
+       --tags
+       strip_out_of_bounds.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff strip_out_of_bounds.txt strip_out_of_bounds.txt.out)))
+ (action
+  (diff strip_out_of_bounds.txt strip_out_of_bounds.txt.out)))
 
 (rule
  (deps ../fixtures/strip_out_of_bounds.tif)
  (action
-  (with-stdout-to strip_out_of_bounds.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json strip_out_of_bounds.tif)))))))
+  (with-stdout-to
+   strip_out_of_bounds.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       json
+       strip_out_of_bounds.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff strip_out_of_bounds.json strip_out_of_bounds.json.out)))
+ (action
+  (diff strip_out_of_bounds.json strip_out_of_bounds.json.out)))
 
 (rule
  (deps ../fixtures/tiled.tif)
  (action
-  (with-stdout-to tiled.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags tiled.tif)))))))
+  (with-stdout-to
+   tiled.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format text --tags tiled.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff tiled.txt tiled.txt.out)))
+ (action
+  (diff tiled.txt tiled.txt.out)))
 
 (rule
  (deps ../fixtures/tiled.tif)
  (action
-  (with-stdout-to tiled.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json tiled.tif)))))))
+  (with-stdout-to
+   tiled.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json tiled.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff tiled.json tiled.json.out)))
+ (action
+  (diff tiled.json tiled.json.out)))
 
 (rule
  (deps ../fixtures/truncated_header.tif)
  (action
-  (with-stdout-to truncated_header.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags truncated_header.tif)))))))
+  (with-stdout-to
+   truncated_header.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       text
+       --tags
+       truncated_header.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff truncated_header.txt truncated_header.txt.out)))
+ (action
+  (diff truncated_header.txt truncated_header.txt.out)))
 
 (rule
  (deps ../fixtures/truncated_header.tif)
  (action
-  (with-stdout-to truncated_header.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json truncated_header.tif)))))))
+  (with-stdout-to
+   truncated_header.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json truncated_header.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff truncated_header.json truncated_header.json.out)))
+ (action
+  (diff truncated_header.json truncated_header.json.out)))
 
 (rule
  (deps ../fixtures/truncated_ifd.tif)
  (action
-  (with-stdout-to truncated_ifd.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags truncated_ifd.tif)))))))
+  (with-stdout-to
+   truncated_ifd.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       text
+       --tags
+       truncated_ifd.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff truncated_ifd.txt truncated_ifd.txt.out)))
+ (action
+  (diff truncated_ifd.txt truncated_ifd.txt.out)))
 
 (rule
  (deps ../fixtures/truncated_ifd.tif)
  (action
-  (with-stdout-to truncated_ifd.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json truncated_ifd.tif)))))))
+  (with-stdout-to
+   truncated_ifd.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json truncated_ifd.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff truncated_ifd.json truncated_ifd.json.out)))
+ (action
+  (diff truncated_ifd.json truncated_ifd.json.out)))
 
 (rule
  (deps ../fixtures/unknown_field_type.tif)
  (action
-  (with-stdout-to unknown_field_type.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags unknown_field_type.tif)))))))
+  (with-stdout-to
+   unknown_field_type.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       text
+       --tags
+       unknown_field_type.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff unknown_field_type.txt unknown_field_type.txt.out)))
+ (action
+  (diff unknown_field_type.txt unknown_field_type.txt.out)))
 
 (rule
  (deps ../fixtures/unknown_field_type.tif)
  (action
-  (with-stdout-to unknown_field_type.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json unknown_field_type.tif)))))))
+  (with-stdout-to
+   unknown_field_type.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       json
+       unknown_field_type.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff unknown_field_type.json unknown_field_type.json.out)))
+ (action
+  (diff unknown_field_type.json unknown_field_type.json.out)))
 
 (rule
  (deps ../fixtures/unknown_tag.tif)
  (action
-  (with-stdout-to unknown_tag.txt.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format text --tags unknown_tag.tif)))))))
+  (with-stdout-to
+   unknown_tag.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       text
+       --tags
+       unknown_tag.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff unknown_tag.txt unknown_tag.txt.out)))
+ (action
+  (diff unknown_tag.txt unknown_tag.txt.out)))
 
 (rule
  (deps ../fixtures/unknown_tag.tif)
  (action
-  (with-stdout-to unknown_tag.json.out
-   (with-stderr-to %{null}
-   (with-accepted-exit-codes (or 0 1)
-    (chdir ../fixtures
-     (run %{bin:tiff-inspector} inspect --format json unknown_tag.tif)))))))
+  (with-stdout-to
+   unknown_tag.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run %{bin:tiff-inspector} inspect --format json unknown_tag.tif)))))))
 
 (rule
  (alias runtest)
- (action (diff unknown_tag.json unknown_tag.json.out)))
+ (action
+  (diff unknown_tag.json unknown_tag.json.out)))

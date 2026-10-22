@@ -2,6 +2,45 @@
 
 Thanks for helping make TIFF files easier to understand.
 
+## Getting started
+
+You need [opam](https://opam.ocaml.org/doc/Install.html) with OCaml ≥ 5.1,
+Node ≥ 20, and Python 3 (only for regenerating fixtures).
+
+```sh
+# once: an OCaml switch and the project's dependencies
+opam switch create . 5.1.1 --deps-only --with-test   # or reuse an existing ≥ 5.1 switch
+eval "$(opam env)"                                    # in every new shell, or dune is not found
+opam install . --deps-only --with-test
+dune build
+```
+
+Try the CLI on a fixture:
+
+```sh
+dune exec -- tiff-inspector inspect test/fixtures/gray8.tif
+```
+
+Run the web app. It needs two terminals:
+
+```sh
+# terminal 1: the API on 127.0.0.1:8080
+eval "$(opam env)"
+dune exec -- tiff-inspector-server --port 8080
+
+# terminal 2: the UI on http://localhost:5173 (proxies /api to the API)
+cd web && npm ci && npm run dev
+```
+
+Check it works: `curl localhost:8080/api/v1/health` returns
+`{ "status": "ok" }`. Then open http://localhost:5173 and upload any file from
+`test/fixtures/`. If uploads end in "Network error", the API is not running.
+
+Before opening a PR, run the checks CI runs (listed under "Development" in the
+[README](README.md#development)). [web/README.md](web/README.md) covers the
+frontend in depth, and [src/server/README.md](src/server/README.md) covers the
+API flags and isolation model.
+
 ## Reporting a TIFF that inspects wrongly
 
 1. Run `tiff-inspector inspect --format json --debug file.tif` and include the

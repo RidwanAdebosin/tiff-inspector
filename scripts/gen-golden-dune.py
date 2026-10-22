@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Regenerates test/golden/dune: one text and one JSON golden per fixture."""
 import os
+import subprocess
 import sys
 
 root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -23,6 +24,10 @@ for n in names:
  (alias runtest)
  (action (diff {n}.{ext} {n}.{ext}.out)))
 """)
+# Format like `dune build @fmt` expects, so CI's formatting check passes
+text = subprocess.run(
+    ["dune", "format-dune-file"], input="".join(out), capture_output=True, text=True, check=True
+).stdout
 with open(os.path.join(root, "test", "golden", "dune"), "w") as f:
-    f.write("".join(out))
+    f.write(text)
 print(f"wrote rules for {len(names)} fixtures", file=sys.stderr)

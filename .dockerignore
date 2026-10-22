@@ -1,0 +1,10 @@
+_build/
+_opam/
+.git/
+.github/
+**/node_modules/
+web/dist/
+test/
+docs/
+*.install
+.DS_Store
