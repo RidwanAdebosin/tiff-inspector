@@ -34,7 +34,11 @@ cd web && npm ci && npm run dev
 
 Check it works: `curl localhost:8080/api/v1/health` returns
 `{ "status": "ok" }`. Then open http://localhost:5173 and upload any file from
-`test/fixtures/`. If uploads end in "Network error", the API is not running.
+`test/fixtures/`, or pick one of the sample links. If uploads end in "We
+couldn't reach the server", the API is not running.
+
+The playground at http://localhost:5173/playground needs its bundle built
+once: `scripts/build-playground.sh` (see "Playground" in the README).
 
 Before opening a PR, run the checks CI runs (listed under "Development" in the
 [README](README.md#development)). [web/README.md](web/README.md) covers the

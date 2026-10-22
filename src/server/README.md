@@ -14,7 +14,7 @@ _build/install/default/bin/tiff-inspector-server --port 8080 --static-dir web/di
 | `GET /api/v1/health` | `200 {"status":"ok", ...}` when the worker binary is executable and the temp dir writable; `503 {"status":"unavailable", ...}` otherwise and `503 {"status":"draining", ...}` while shutting down. Also carries `version`, `schema_version`, `workers_busy` and `checks: {worker, temp_dir}` |
 | `GET /api/v1/version` | `{"tool":"tiff-inspector","version":...,"schema_version":...,"limits":{"max_upload_bytes":...,"timeout_seconds":...}}` |
 | `POST /api/v1/inspections` | `multipart/form-data` with a `file` field; returns a schema-v1 inspection report (`schema/inspection-report.v1.json`) |
-| other `GET`/`HEAD` | the web app from `--static-dir`, falling back to `index.html` (404 JSON when no static dir is set) |
+| other `GET`/`HEAD` | the web app from `--static-dir`, falling back to `index.html` (404 JSON when no static dir is set); `ETag` with 304 on `If-None-Match`, and `<file>.gz` served with `Content-Encoding: gzip` when present and accepted |
 
 Unknown `/api/*` paths return 404, a wrong method on a known route 405 (with
 `Allow`). Every error body is a schema-v1 FailureReport (`ok: false`,
@@ -137,7 +137,9 @@ with `--hsts` also `Strict-Transport-Security: max-age=31536000;
 includeSubDomains`. API responses carry `Cache-Control: no-store`; HTML from
 the static dir `Content-Security-Policy: default-src 'self'; style-src 'self'
 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'none'; base-uri
-'none'; object-src 'none'; form-action 'self'`.
+'none'; object-src 'none'; form-action 'self'`. Other static files are
+cacheable for an hour (`public, max-age=3600`) and revalidate by `ETag`; every
+static response carries `Vary: Accept-Encoding`.
 
 One line per request is logged to stderr: method, path, status, duration,
 and for inspections the worker outcome (`worker=exit=0 12ms out=7680B`,

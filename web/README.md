@@ -22,8 +22,9 @@ export.
    Vite proxies `/api/*` to `http://127.0.0.1:8080` (see `vite.config.ts`). In production
    the built `dist/` is served from the same origin as the API, so no proxy is needed.
 
-If the API server is not running, uploads end in a "Network error" or "Server error"
-state with a Retry button.
+If the API server is not running, uploads end in a "We couldn't reach the server" state
+with a Retry button. The sample links under the drop zone fetch fixtures from
+`public/playground/samples/` and send them through the same validate-and-upload path.
 
 ## Playground
 
@@ -37,6 +38,8 @@ which is built from the OCaml sources and not committed:
 Without it the page loads but reports that the bundle is missing.
 `public/playground/worker.js` hosts the toplevel in a web worker, and
 `src/playground/` holds the page, the editor and the worker client.
+`public/playground/` also holds the sample TIFFs (copies of `../test/fixtures`,
+served to both pages) and the OCaml camel used as the site icon.
 
 ## Scripts
 
@@ -88,6 +91,7 @@ src/
   state/        inspection.ts (state-machine reducer), useInspection.ts (drives it)
   lib/          validation (extension/size/magic bytes), formatting, tag search, download
   components/   UI; FieldValue renders every FieldOf value (present/default/absent/…)
+  playground/   Playground page, CodeMirror editor, worker client (runner.ts), protocol
   test/         setup, fixtures/successReport.ts (schema-validated mock), schema test
 scripts/        gen-types.mjs, validate-goldens.mjs
 ```

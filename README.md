@@ -40,7 +40,8 @@ Values that do not come directly from the file are marked, never guessed:
 
 ## Install and build
 
-Requirements: OCaml ≥ 5.1 with opam, and Node ≥ 20 for the web app.
+Requirements: OCaml ≥ 5.1 with opam, and Node ≥ 20 for the web app and the
+playground check in `dune test`.
 
 ```sh
 opam install . --deps-only --with-test
@@ -73,9 +74,14 @@ cd web && npm ci && npm run dev                  # UI on :5173, proxies /api
 
 Production: `cd web && npm run build`, then
 `tiff-inspector-server --static-dir web/dist` serves the UI and the API from
-one origin. Uploads are written to a private temp directory, inspected in a
-separate process with time and memory limits, and deleted straight away.
+one origin. Static files are served with an `ETag`, and a precompressed
+`<file>.gz` sibling is used for clients that accept gzip (the Docker build
+creates these). Uploads are written to a private temp directory, inspected in
+a separate process with time and memory limits, and deleted straight away.
 Nothing is stored. See [src/server/README.md](src/server/README.md).
+
+The upload page also offers a few bundled sample files, so a first report is
+one click away without a TIFF to hand.
 
 API: `POST /api/v1/inspections` (multipart field `file`) → inspection report;
 `GET /api/v1/health` → `{"status":"ok"}`.
@@ -83,7 +89,8 @@ API: `POST /api/v1/inspections` (multipart field `file`) → inspection report;
 ## Playground
 
 The web app also has an OCaml playground at `/playground`: an editor where you
-can write OCaml, run it and see compile errors underlined. It is the OCaml
+can write OCaml (no `;;` needed), run it and see compile errors underlined, with
+a small `Test` helper for pass/fail checks. It is the OCaml
 toplevel compiled to JavaScript with [js_of_ocaml](https://ocsigen.org/js_of_ocaml/),
 with the standard library, the vendored `tiff` library and the inspector core
 linked in, plus a few sample files from `test/fixtures`. Code runs in a web
@@ -99,7 +106,8 @@ scripts/build-playground.sh         # writes web/public/playground/toplevel.js
 
 The Docker image builds it as part of the OCaml stage. The sources are in
 `playground/`: `top.ml` is the entry point, `test.ml` and `sample.ml` are the
-helpers available as `Test` and `Sample` in the editor.
+helpers available as `Test` and `Sample` in the editor, and `check.cjs` runs
+the built bundle under Node as part of `dune test`.
 
 ## Deploying
 
@@ -153,7 +161,7 @@ is not decoded in v1.
 
 ```sh
 dune build @fmt          # formatting (ocamlformat 0.29.0)
-dune test                # unit, mutation, golden and server tests
+dune test                # unit, mutation, golden, server and playground tests
 dune promote             # accept changed golden output after review
 python3 scripts/gen-fixtures/gen_fixtures.py test/fixtures --verify
 test/server/smoke.sh     # end-to-end HTTP checks
@@ -167,4 +175,6 @@ CI runs the same commands (`.github/workflows/ci.yml`). See
 ## License
 
 MIT. ocaml-tiff is MIT-licensed by the geocaml developers
-(`vendor/ocaml-tiff/LICENSE`).
+(`vendor/ocaml-tiff/LICENSE`). The camel icon (`web/public/playground/ocaml-icon.*`)
+is the [OCaml logo](https://ocaml.org/logo), released into the public domain
+by the OCaml project.

@@ -54,3 +54,16 @@
   seconds (quadratic bounds check).
 - CLI: `--ifd N` now also applies to `--format json`; `--max-ifds 0` is a
   usage error (exit 2) instead of a malformed-file failure.
+- OCaml playground at `/playground`: the toplevel compiled with js_of_ocaml,
+  with the vendored `tiff` library, the inspector core, `Test`/`Sample`
+  helpers and bundled sample files. Runs in a web worker; compile errors are
+  underlined in the editor; `;;` is optional; runs over 10 s are stopped.
+- Library split: the core (`tiff-inspector.core`) no longer depends on Unix so
+  it compiles to JavaScript. `Inspect.file` moved to
+  `Tiff_inspector_unix.file` in the new `tiff-inspector.unix` library.
+- Web app: one-click sample files on the upload page, plainer landing page,
+  friendlier status and error copy, skip link, per-page titles, the OCaml
+  camel as the site icon.
+- Server: static files carry an `ETag` (304 on `If-None-Match`) and a
+  precompressed `.gz` sibling is served to clients that accept gzip; the
+  Docker build precompresses the web app.
