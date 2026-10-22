@@ -8,11 +8,14 @@ services:
     healthCheckPath: /api/v1/health
     autoDeploy: true
     envVars:
-      # Sized for the free plan's 512 MB: 2 workers x 200 MB plus the server.
+      # Sized for the free plan's 512 MB RAM. The memory limit caps each
+      # worker's virtual address space, not its RAM: the OCaml 5 runtime
+      # reserves ~256 MB of address space at startup, so below ~300 every
+      # inspection fails with limit_exceeded.
       - key: TIFF_INSPECTOR_WORKERS
         value: "2"
       - key: TIFF_INSPECTOR_MEMORY_LIMIT_MB
-        value: "200"
+        value: "384"
       # Render's proxy sets X-Forwarded-For; without this every visitor shares
       # one rate-limit bucket.
       - key: TIFF_INSPECTOR_TRUST_PROXY

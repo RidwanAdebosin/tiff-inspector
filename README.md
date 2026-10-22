@@ -80,6 +80,32 @@ Nothing is stored. See [src/server/README.md](src/server/README.md).
 API: `POST /api/v1/inspections` (multipart field `file`) → inspection report;
 `GET /api/v1/health` → `{"status":"ok"}`.
 
+## Deploying
+
+The [Dockerfile](Dockerfile) builds one image that serves the UI and the API
+from the same origin:
+
+```sh
+docker build -t tiff-inspector .
+docker run --rm -p 8080:8080 --memory=512m tiff-inspector   # http://localhost:8080
+```
+
+It listens on `$PORT` (default 8080). Configure it with the
+`TIFF_INSPECTOR_*` environment variables listed in
+[src/server/README.md](src/server/README.md#flags).
+
+**Render (free plan).** [render.yaml](render.yaml) is a Render Blueprint. In
+the Render dashboard choose *New → Blueprint*, connect this repository, and
+apply it. Every push to `main` redeploys. Free services sleep after 15 minutes
+without traffic, so the first request after that takes about a minute.
+
+Do not set `TIFF_INSPECTOR_MEMORY_LIMIT_MB` below about 300 on Linux. The
+OCaml 5 runtime reserves ~256 MB of address space at startup, so lower limits
+make every inspection fail with `limit_exceeded`.
+
+The API cannot run on serverless platforms such as Vercel, because it is a
+long-running process that starts a worker process per upload.
+
 ## JSON output
 
 Defined by [schema/inspection-report.v1.json](schema/inspection-report.v1.json).
