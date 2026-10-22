@@ -53,10 +53,12 @@ describe("App inspection flow", () => {
     const user = userEvent.setup();
     render(<App />);
     expect(
-      screen.getByRole("heading", { name: /look inside your TIFF/ }),
+      screen.getByRole("heading", { name: "See what's inside a TIFF" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/^25 MB/)).toBeInTheDocument();
-    expect(screen.getByText(/We never keep a copy/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/deleted as soon as the report is built/),
+    ).toBeInTheDocument();
 
     await user.upload(input(), tiff());
     await vi.waitFor(() => expect(pending).toHaveLength(1));
@@ -95,8 +97,65 @@ describe("App inspection flow", () => {
       screen.getByRole("button", { name: "Inspect another file" }),
     );
     expect(
-      screen.getByRole("heading", { name: /look inside your TIFF/ }),
+      screen.getByRole("heading", { name: "See what's inside a TIFF" }),
     ).toBeInTheDocument();
+  });
+
+  it("inspects a bundled sample when one is picked", async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(new Uint8Array([0x49, 0x49, 0x2a, 0x00, 8, 0, 0, 0]), {
+          status: 200,
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      render(<App />);
+      await userEvent.click(
+        screen.getByRole("button", { name: "a small grayscale image" }),
+      );
+      await vi.waitFor(() => expect(pending).toHaveLength(1));
+      expect(fetchMock).toHaveBeenCalledWith("/playground/samples/gray8.tif");
+      const uploaded = vi
+        .mocked((await import("./api/client")).uploadInspection)
+        .mock.calls.at(-1)![0];
+      expect(uploaded.name).toBe("gray8.tif");
+      await vi.waitFor(() =>
+        expect(screen.getByRole("status")).toHaveTextContent(
+          "Uploading “gray8.tif”",
+        ),
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("explains when a sample cannot be fetched", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(null, { status: 404 })),
+    );
+    try {
+      render(<App />);
+      await userEvent.click(
+        screen.getByRole("button", { name: "a broken file" }),
+      );
+      await vi.waitFor(() =>
+        expect(screen.getByRole("status")).toHaveTextContent(
+          "Couldn't fetch bad_magic.tif",
+        ),
+      );
+      expect(pending).toHaveLength(0);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("offers a skip link to the main content", () => {
+    render(<App />);
+    const skip = screen.getByRole("link", { name: "Skip to content" });
+    expect(skip).toHaveAttribute("href", "#main");
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main");
   });
 
   it("lists the BigTIFF extensions under supported formats", () => {
@@ -185,7 +244,7 @@ describe("App inspection flow", () => {
       expect(screen.getByRole("status")).toBeEmptyDOMElement();
       expect(screen.queryByRole("alert")).toBeNull();
       expect(
-        screen.getByRole("heading", { name: /look inside your TIFF/ }),
+        screen.getByRole("heading", { name: "See what's inside a TIFF" }),
       ).toBeInTheDocument();
     });
 

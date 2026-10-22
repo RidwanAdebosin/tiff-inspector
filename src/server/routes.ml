@@ -282,10 +282,16 @@ let not_found ctx = error ctx `Not_found I.Problem.Invalid_request "Not found"
 let static ctx (req : Conn.request) =
   match (ctx.config.static_dir, req.meth) with
   | Some root, (`GET | `HEAD) -> (
-      match Static.resolve ~root req.path with
-      | Some (file, body) ->
-          Conn.response `OK body
-            ~headers:(common_headers ctx.config @ Static.headers file)
+      let header = Http.Header.get req.headers in
+      let accept_gzip = Static.accepts_gzip (header "accept-encoding") in
+      match Static.resolve ~accept_gzip ~root req.path with
+      | Some file ->
+          let headers = common_headers ctx.config @ Static.headers file in
+          if
+            Static.not_modified ~if_none_match:(header "if-none-match")
+              file.etag
+          then Conn.response `Not_modified "" ~headers
+          else Conn.response `OK file.body ~headers
       | None -> not_found ctx)
   | Some _, _ -> method_not_allowed ctx "GET, HEAD"
   | None, _ -> not_found ctx

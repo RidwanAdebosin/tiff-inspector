@@ -102,27 +102,12 @@ describe("Playground", () => {
     expect(screen.getByRole("status")).toHaveTextContent("One thing to fix");
   });
 
-  it("shows the OCaml camel in the tab while open, then restores the previous icon", () => {
-    const original = document.createElement("link");
-    original.rel = "icon";
-    original.href = "/old.ico";
-    document.head.append(original);
+  it("sets the tab title while open and restores it afterwards", () => {
     document.title = "Before";
     const { unmount } = render(<Playground />);
-    const icons = Array.from(
-      document.head.querySelectorAll<HTMLLinkElement>('link[rel="icon"]'),
-    );
-    expect(icons.map((l) => l.getAttribute("href"))).toEqual([
-      "/playground/ocaml-icon.svg",
-      "/playground/ocaml-icon-32.png",
-    ]);
     expect(document.title).toBe("OCaml playground · TIFF Inspector");
     unmount();
-    expect(
-      Array.from(document.head.querySelectorAll('link[rel="icon"]')),
-    ).toEqual([original]);
     expect(document.title).toBe("Before");
-    original.remove();
   });
 
   it("celebrates when every check passes and nothing is wrong", async () => {

@@ -68,11 +68,12 @@ export function DropZone({
       onDragEnd={endDrag}
       onDrop={onDrop}
       data-dragging={dragging || undefined}
-      className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-stone-300 bg-white px-4 py-12 text-center transition-colors data-dragging:border-amber-600 data-dragging:bg-amber-50 dark:border-stone-700 dark:bg-stone-900 dark:data-dragging:border-amber-400 dark:data-dragging:bg-amber-950"
+      className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-stone-300 bg-white px-4 py-10 text-center transition-colors data-dragging:border-amber-600 data-dragging:bg-amber-50 dark:border-stone-700 dark:bg-stone-900 dark:data-dragging:border-amber-400 dark:data-dragging:bg-amber-950"
     >
-      <span className="flex size-12 items-center justify-center rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-        <Upload aria-hidden className="size-6" />
-      </span>
+      <Upload
+        aria-hidden
+        className="size-6 text-stone-500 dark:text-stone-400"
+      />
       <button
         type="button"
         className={primaryButton}

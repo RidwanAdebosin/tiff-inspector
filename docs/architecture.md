@@ -130,6 +130,20 @@ machine. The results view renders every field through one component that
 shows its provenance status, and "Download JSON" exports the exact server
 response. See [`web/README.md`](../web/README.md).
 
+## Playground (`playground/`)
+
+The OCaml toplevel compiled to JavaScript with js_of_ocaml, linked with the
+vendored `tiff` library, the inspector core and two helper modules (`Test`,
+`Sample`). `top.ml` exposes `ocamlPlayground` to JavaScript; code is parsed
+like `#use` (no `;;` needed) and each definition runs on its own, stopping at
+the first error. `web/public/playground/worker.js` hosts it in a web worker
+so a runaway loop can be killed and the page's content-security policy stays
+strict. `check.cjs` drives the real bundle under Node as part of `dune test`.
+
+The static server serves a precompressed `.gz` sibling when the client
+accepts gzip (the 6 MB bundle is 1.3 MB on the wire) and answers
+`If-None-Match` with 304, so returning visitors re-download nothing.
+
 ## Testing
 
 | Layer | Where |

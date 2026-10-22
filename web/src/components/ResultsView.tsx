@@ -1,7 +1,8 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Download, RotateCcw } from "lucide-react";
 import type { SuccessReport } from "../api/types";
 import { downloadText, reportFileName } from "../lib/download";
+import { applyPageTitle } from "../lib/pageTitle";
 import { DirectoryPanel } from "./DirectoryPanel";
 import { panelId, tabId } from "../lib/directory";
 import { IfdTabs } from "./IfdTabs";
@@ -25,6 +26,7 @@ export function ResultsView({
   const [selected, setSelected] = useState(0);
   const idPrefix = useId();
   const dir = report.directories[selected];
+  useEffect(() => applyPageTitle(`${fileName} · TIFF Inspector`), [fileName]);
 
   return (
     <div className="space-y-6">

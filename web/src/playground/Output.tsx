@@ -12,7 +12,8 @@ const kindClass: Record<Chunk["kind"], string> = {
   answer: "text-stone-500 dark:text-stone-400",
 };
 
-/** The toplevel's output, in order: the program's prints, errors and the toplevel's answers. */
+/** The toplevel's output, in order: the program's prints, errors and the toplevel's answers.
+    Not a live region: the status line summarises each run for screen readers. */
 export function Output({ chunks, placeholder }: OutputProps) {
   if (chunks.length === 0) {
     return (
@@ -22,10 +23,7 @@ export function Output({ chunks, placeholder }: OutputProps) {
     );
   }
   return (
-    <pre
-      className={`${mono} overflow-auto p-3 whitespace-pre-wrap`}
-      aria-live="polite"
-    >
+    <pre className={`${mono} overflow-auto p-3 whitespace-pre-wrap`}>
       {chunks.map((c, i) => (
         <span key={i} className={kindClass[c.kind]} data-kind={c.kind}>
           {c.text}

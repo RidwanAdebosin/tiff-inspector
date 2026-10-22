@@ -8,4 +8,6 @@ dune build --profile release playground/top.bc.js
 mkdir -p "$(dirname "$out")"
 cp _build/default/playground/top.bc.js "$out"
 chmod u+w "$out"
-echo "wrote $out ($(wc -c < "$out" | tr -d ' ') bytes)"
+# The server serves the .gz sibling to clients that accept gzip.
+gzip -k -9 -f "$out"
+echo "wrote $out ($(wc -c < "$out" | tr -d ' ') bytes, $(wc -c < "$out.gz" | tr -d ' ') gzipped)"

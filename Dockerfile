@@ -21,9 +21,12 @@ COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
 COPY schema/ /src/schema/
-# The OCaml playground bundle (see playground/dune).
+# The OCaml playground bundle (see playground/dune). Text assets are
+# precompressed: the server serves <file>.gz to clients that accept gzip.
 COPY --from=ocaml /home/opam/out/toplevel.js public/playground/toplevel.js
-RUN npm run build
+RUN npm run build \
+ && find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.svg' -o -name '*.html' -o -name '*.json' \) \
+      -exec gzip -k -9 {} \;
 
 # --- Runtime ------------------------------------------------------------------
 FROM debian:12-slim

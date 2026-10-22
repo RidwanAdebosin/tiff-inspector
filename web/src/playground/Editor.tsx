@@ -28,6 +28,8 @@ type EditorProps = {
   onRun: () => void;
   problems: Problem[];
   label: string;
+  /** id of an element describing the editor, e.g. how to leave it with the keyboard. */
+  describedBy?: string;
 };
 
 const darkQuery = "(prefers-color-scheme: dark)";
@@ -66,6 +68,7 @@ export function Editor({
   onRun,
   problems,
   label,
+  describedBy,
 }: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
@@ -102,7 +105,10 @@ export function Editor({
           EditorView.updateListener.of((u) => {
             if (u.docChanged) onChangeRef.current(u.state.doc.toString());
           }),
-          EditorView.contentAttributes.of({ "aria-label": label }),
+          EditorView.contentAttributes.of({
+            "aria-label": label,
+            ...(describedBy ? { "aria-describedby": describedBy } : {}),
+          }),
           baseTheme,
           theme.of(pick(media.matches)),
         ],

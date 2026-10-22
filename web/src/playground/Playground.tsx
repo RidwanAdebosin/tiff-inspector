@@ -1,9 +1,9 @@
 import { Play } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { card, mono, muted, primaryButton } from "../components/styles";
+import { applyPageTitle } from "../lib/pageTitle";
 import { Editor } from "./Editor";
 import { EXAMPLES } from "./examples";
-import { applyPageIcon } from "./pageIcon";
 import { Output } from "./Output";
 import { problems as toProblems, type Chunk, type Problem } from "./protocol";
 import {
@@ -81,17 +81,9 @@ export default function Playground() {
   );
   const runner = useRef<Runner | null>(null);
   const selectId = useId();
+  const hintId = useId();
 
-  // The OCaml camel in the tab while this page is open.
-  useEffect(
-    () =>
-      applyPageIcon({
-        title: "OCaml playground · TIFF Inspector",
-        svg: `${BASE}playground/ocaml-icon.svg`,
-        png: `${BASE}playground/ocaml-icon-32.png`,
-      }),
-    [],
-  );
+  useEffect(() => applyPageTitle("OCaml playground · TIFF Inspector"), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -191,9 +183,11 @@ export default function Playground() {
         <div>
           <h1 className="text-2xl font-semibold">OCaml playground</h1>
           <p className={`mt-1 text-sm ${muted}`}>
-            Write OCaml and run it in your browser. The standard library, the
-            tiff library and the inspector core are loaded, with a few sample
-            files. Nothing is uploaded.
+            Write some OCaml, press Run, and see what happens. Mistakes are
+            welcome here: the editor points at them and you just run again. The
+            standard library, the tiff library and the inspector core are ready
+            to use, along with a few sample files. Everything stays in your
+            browser.
           </p>
         </div>
       </div>
@@ -245,12 +239,16 @@ export default function Playground() {
 
       <div className="grid gap-4 lg:grid-cols-2">
         <section aria-label="Code" className={`${card} overflow-hidden`}>
+          <p id={hintId} className="sr-only">
+            Press Escape, then Tab, to move focus out of the editor.
+          </p>
           <Editor
             value={code}
             onChange={setCode}
             onRun={run}
             problems={problems}
             label="OCaml code"
+            describedBy={hintId}
           />
         </section>
         <section
@@ -321,8 +319,9 @@ export default function Playground() {
             ))}
           </ul>
           <p className={`mt-3 text-xs ${muted}`}>
-            A run that takes longer than {RUN_TIMEOUT_MS / 1000} seconds is
-            stopped and the toplevel restarts, which clears earlier definitions.
+            Definitions carry over from one run to the next. If a run takes
+            longer than {RUN_TIMEOUT_MS / 1000} seconds we stop it and start
+            fresh, so earlier definitions are cleared.
           </p>
         </section>
       </div>

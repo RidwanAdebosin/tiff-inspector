@@ -59,6 +59,12 @@ function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-10 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:shadow dark:focus:bg-stone-900"
+      >
+        Skip to content
+      </a>
       <header className="border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3">
           <FileSearch aria-hidden className="size-5" />
@@ -82,6 +88,7 @@ function App() {
         </div>
       </header>
       <main
+        id="main"
         ref={mainRef}
         tabIndex={-1}
         className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 focus:outline-none"

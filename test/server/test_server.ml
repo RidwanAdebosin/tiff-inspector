@@ -450,6 +450,91 @@ let test_worker_log () =
     (Worker.summary
        { r with outcome = Worker.Timed_out; duration = 10.; output_bytes = 0 })
 
+(* --- Static files ---------------------------------------------------------- *)
+
+let with_static_dir f =
+  let dir = Filename.temp_file "tiff-static" "" in
+  Sys.remove dir;
+  Sys.mkdir dir 0o700;
+  let write name content =
+    Out_channel.with_open_bin (Filename.concat dir name) (fun oc ->
+        Out_channel.output_string oc content)
+  in
+  write "index.html" "<!doctype html><title>t</title>";
+  write "app.js" "plain javascript";
+  write "app.js.gz" "gz";
+  Fun.protect
+    ~finally:(fun () ->
+      Array.iter (fun n -> Sys.remove (Filename.concat dir n)) (Sys.readdir dir);
+      Sys.rmdir dir)
+    (fun () -> f dir)
+
+let test_static_gzip () =
+  with_static_dir (fun root ->
+      let plain =
+        Option.get (Tiff_inspector_server.Static.resolve ~root "/app.js")
+      in
+      Alcotest.(check string) "plain body" "plain javascript" plain.body;
+      Alcotest.(check (option string)) "no encoding" None plain.encoding;
+      let gz =
+        Option.get
+          (Tiff_inspector_server.Static.resolve ~accept_gzip:true ~root
+             "/app.js")
+      in
+      Alcotest.(check string) "gz body" "gz" gz.body;
+      Alcotest.(check (option string)) "gzip encoding" (Some "gzip") gz.encoding;
+      Alcotest.(check bool)
+        "etags differ per representation" true (plain.etag <> gz.etag);
+      Alcotest.(check (option string))
+        "content type follows the logical file"
+        (Some "text/javascript; charset=utf-8")
+        (List.assoc_opt "content-type"
+           (Tiff_inspector_server.Static.headers gz));
+      Alcotest.(check (option string))
+        "content-encoding" (Some "gzip")
+        (List.assoc_opt "content-encoding"
+           (Tiff_inspector_server.Static.headers gz));
+      Alcotest.(check (option string))
+        "vary" (Some "accept-encoding")
+        (List.assoc_opt "vary" (Tiff_inspector_server.Static.headers plain));
+      let index =
+        Option.get
+          (Tiff_inspector_server.Static.resolve ~accept_gzip:true ~root
+             "/some/client/route")
+      in
+      Alcotest.(check (option string))
+        "index has no gz sibling" None index.encoding;
+      Alcotest.(check bool)
+        "index fallback" true
+        (String.ends_with ~suffix:"index.html" index.path))
+
+let test_static_negotiation () =
+  let open Tiff_inspector_server.Static in
+  Alcotest.(check bool) "gzip" true (accepts_gzip (Some "gzip, deflate, br"));
+  Alcotest.(check bool) "case" true (accepts_gzip (Some "GZIP"));
+  Alcotest.(check bool) "q=0" false (accepts_gzip (Some "gzip;q=0, br"));
+  Alcotest.(check bool) "q=0.5" true (accepts_gzip (Some "gzip; q=0.5"));
+  Alcotest.(check bool) "absent" false (accepts_gzip None);
+  Alcotest.(check bool) "other" false (accepts_gzip (Some "br"));
+  Alcotest.(check bool)
+    "match" true
+    (not_modified ~if_none_match:(Some "\"abc\"") "\"abc\"");
+  Alcotest.(check bool)
+    "weak match" true
+    (not_modified ~if_none_match:(Some "W/\"abc\"") "\"abc\"");
+  Alcotest.(check bool)
+    "list" true
+    (not_modified ~if_none_match:(Some "\"x\", \"abc\"") "\"abc\"");
+  Alcotest.(check bool)
+    "star" true
+    (not_modified ~if_none_match:(Some "*") "\"abc\"");
+  Alcotest.(check bool)
+    "mismatch" false
+    (not_modified ~if_none_match:(Some "\"abd\"") "\"abc\"");
+  Alcotest.(check bool)
+    "none" false
+    (not_modified ~if_none_match:None "\"abc\"")
+
 let () =
   Alcotest.run "server"
     [
@@ -485,4 +570,9 @@ let () =
           Alcotest.test_case "proxy mode" `Quick test_proxy_mode;
         ] );
       ("framing", [ Alcotest.test_case "of_headers" `Quick test_framing ]);
+      ( "static",
+        [
+          Alcotest.test_case "gzip sibling and etag" `Quick test_static_gzip;
+          Alcotest.test_case "negotiation" `Quick test_static_negotiation;
+        ] );
     ]
