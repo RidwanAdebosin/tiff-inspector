@@ -1,7 +1,8 @@
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Download, RotateCcw } from "lucide-react";
 import type { SuccessReport } from "../api/types";
 import { downloadText, reportFileName } from "../lib/download";
+import { applyPageTitle } from "../lib/pageTitle";
 import { DirectoryPanel } from "./DirectoryPanel";
 import { panelId, tabId } from "../lib/directory";
 import { IfdTabs } from "./IfdTabs";
@@ -16,24 +17,42 @@ type ResultsViewProps = {
   onInspectAnother: () => void;
 };
 
-export function ResultsView({ fileName, report, rawBody, onInspectAnother }: ResultsViewProps) {
+export function ResultsView({
+  fileName,
+  report,
+  rawBody,
+  onInspectAnother,
+}: ResultsViewProps) {
   const [selected, setSelected] = useState(0);
   const idPrefix = useId();
   const dir = report.directories[selected];
+  useEffect(() => applyPageTitle(`${fileName} · TIFF Inspector`), [fileName]);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">Inspection report</p>
-          <h1 className="font-mono text-xl font-semibold break-all sm:text-2xl">{fileName}</h1>
+          <p className="text-sm text-stone-600 dark:text-stone-400">
+            Here's what we found in
+          </p>
+          <h1 className="font-mono text-xl font-semibold break-all sm:text-2xl">
+            {fileName}
+          </h1>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={secondaryButton} onClick={() => downloadText(rawBody, reportFileName(fileName))}>
+          <button
+            type="button"
+            className={secondaryButton}
+            onClick={() => downloadText(rawBody, reportFileName(fileName))}
+          >
             <Download aria-hidden className="size-4" />
             Download JSON
           </button>
-          <button type="button" className={primaryButton} onClick={onInspectAnother}>
+          <button
+            type="button"
+            className={primaryButton}
+            onClick={onInspectAnother}
+          >
             <RotateCcw aria-hidden className="size-4" />
             Inspect another file
           </button>
@@ -47,7 +66,9 @@ export function ResultsView({ fileName, report, rawBody, onInspectAnother }: Res
           Directories
         </h2>
         {report.directories.length === 0 ? (
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">The report contains no directories.</p>
+          <p className="text-sm text-stone-600 dark:text-stone-400">
+            The report contains no directories.
+          </p>
         ) : (
           <>
             <IfdTabs
@@ -57,7 +78,12 @@ export function ResultsView({ fileName, report, rawBody, onInspectAnother }: Res
               idPrefix={idPrefix}
             />
             {dir && (
-              <div role="tabpanel" id={panelId(idPrefix)} aria-labelledby={tabId(idPrefix, selected)} tabIndex={0}>
+              <div
+                role="tabpanel"
+                id={panelId(idPrefix)}
+                aria-labelledby={tabId(idPrefix, selected)}
+                tabIndex={0}
+              >
                 <DirectoryPanel dir={dir} />
               </div>
             )}

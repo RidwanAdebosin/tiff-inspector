@@ -1,0 +1,78 @@
+; The browser playground: an OCaml toplevel compiled to JavaScript with the
+; tiff library and the inspector core linked in. Built by
+; scripts/build-playground.sh into web/public/playground/toplevel.js.
+
+(library
+ (name playground_prelude)
+ (public_name tiff-inspector-playground.prelude)
+ (wrapped false)
+ (modules test sample)
+ (libraries tiff_inspector yojson))
+
+(executable
+ (name top)
+ (modules top)
+ (modes js)
+ (libraries
+  js_of_ocaml
+  js_of_ocaml-compiler
+  js_of_ocaml-toplevel
+  playground_prelude
+  tiff
+  tiff_inspector
+  yojson)
+ (link_flags (-linkall))
+ (js_of_ocaml
+  (javascript_files stubs.js)
+  (flags
+   (:standard --toplevel --export %{dep:export.txt}))))
+
+; Units visible from the toplevel. Everything else (compiler-libs, the
+; js_of_ocaml runtime) stays private, which keeps the bundle small.
+
+(rule
+ (targets installed-units.txt)
+ (action
+  (run
+   jsoo_listunits
+   -o
+   %{targets}
+   stdlib
+   fmt
+   cstruct
+   optint
+   bstr
+   decompress.zl
+   yojson)))
+
+(rule
+ (targets export.txt)
+ (deps
+  installed-units.txt
+  (:cmas
+   %{lib:tiff:tiff.cma}
+   %{lib:tiff-inspector.core:tiff_inspector.cma}
+   %{lib:tiff-inspector-playground.prelude:playground_prelude.cma}))
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (cat installed-units.txt)
+    (pipe-stdout
+     (run %{ocaml_bin}/ocamlobjinfo %{cmas})
+     (run sed -n "s/^Unit name: //p"))))))
+
+; End-to-end check of the bundle through the real worker script, under Node.
+
+(rule
+ (alias runtest)
+ (enabled_if %{bin-available:node})
+ (deps
+  (glob_files %{project_root}/test/fixtures/*.tif))
+ (action
+  (run
+   node
+   %{dep:check.cjs}
+   %{dep:top.bc.js}
+   %{dep:../web/public/playground/worker.js}
+   %{project_root}/test/fixtures)))

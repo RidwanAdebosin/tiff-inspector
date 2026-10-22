@@ -6,7 +6,7 @@
   }
 
   body {
-    @apply min-w-80 bg-zinc-50 font-sans text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+    @apply min-w-80 bg-stone-50 font-sans text-stone-900 antialiased dark:bg-stone-950 dark:text-stone-100;
   }
 
   /* One visible, high-contrast focus indicator for every interactive element. */

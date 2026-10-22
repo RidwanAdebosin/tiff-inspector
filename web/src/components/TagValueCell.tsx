@@ -5,7 +5,10 @@ import { COLLAPSE_CHARS, PREVIEW_ITEMS, isLongValue } from "../lib/tags";
 import { Badge, type BadgeTone } from "./Badge";
 import { linkButton } from "./styles";
 
-const STATUS: Record<Exclude<Tag["value_status"], "decoded">, { tone: BadgeTone; text: string }> = {
+const STATUS: Record<
+  Exclude<Tag["value_status"], "decoded">,
+  { tone: BadgeTone; text: string }
+> = {
   truncated: { tone: "warn", text: "truncated" },
   unreadable: { tone: "danger", text: "unreadable" },
   unsupported_type: { tone: "warn", text: "unsupported type" },
@@ -15,7 +18,9 @@ function preview(tag: Tag, expanded: boolean): string {
   const value = tag.value;
   if (value === null) return "";
   if (value.kind === "ascii") {
-    return expanded || value.text.length <= COLLAPSE_CHARS ? value.text : `${value.text.slice(0, COLLAPSE_CHARS)}…`;
+    return expanded || value.text.length <= COLLAPSE_CHARS
+      ? value.text
+      : `${value.text.slice(0, COLLAPSE_CHARS)}…`;
   }
   const items = tagValueItems(value);
   if (expanded || !isLongValue(tag)) return items.join(", ");
@@ -26,14 +31,17 @@ export function TagValueCell({ tag }: { tag: Tag }) {
   const [expanded, setExpanded] = useState(false);
   const valueId = useId();
   const long = isLongValue(tag);
-  const status = tag.value_status === "decoded" ? null : STATUS[tag.value_status];
+  const status =
+    tag.value_status === "decoded" ? null : STATUS[tag.value_status];
   const shownCount = tag.value ? tagValueLength(tag.value) : 0;
   const unitWord = tag.value?.kind === "ascii" ? "characters" : "values";
 
   return (
     <div className="min-w-0 space-y-1">
       {tag.value === null ? (
-        <span className="text-zinc-600 italic dark:text-zinc-400">no value</span>
+        <span className="text-stone-600 italic dark:text-stone-400">
+          no value
+        </span>
       ) : (
         <span
           id={valueId}
@@ -45,11 +53,14 @@ export function TagValueCell({ tag }: { tag: Tag }) {
       {(long || status) && (
         <div className="flex flex-wrap items-center gap-2">
           {status && <Badge tone={status.tone}>{status.text}</Badge>}
-          {tag.value_status === "truncated" && tag.value && tag.value.kind !== "ascii" && (
-            <span className="text-xs text-zinc-600 dark:text-zinc-400">
-              {formatInteger(shownCount)} of {formatInteger(tag.count)} values included
-            </span>
-          )}
+          {tag.value_status === "truncated" &&
+            tag.value &&
+            tag.value.kind !== "ascii" && (
+              <span className="text-xs text-stone-600 dark:text-stone-400">
+                {formatInteger(shownCount)} of {formatInteger(tag.count)} values
+                included
+              </span>
+            )}
           {long && (
             <button
               type="button"
@@ -58,12 +69,16 @@ export function TagValueCell({ tag }: { tag: Tag }) {
               aria-controls={valueId}
               onClick={() => setExpanded((v) => !v)}
             >
-              {expanded ? "Show less" : `Show all ${formatInteger(shownCount)} ${unitWord}`}
+              {expanded
+                ? "Show less"
+                : `Show all ${formatInteger(shownCount)} ${unitWord}`}
             </button>
           )}
         </div>
       )}
-      {tag.note && <p className="text-xs text-zinc-600 dark:text-zinc-400">{tag.note}</p>}
+      {tag.note && (
+        <p className="text-xs text-stone-600 dark:text-stone-400">{tag.note}</p>
+      )}
     </div>
   );
 }

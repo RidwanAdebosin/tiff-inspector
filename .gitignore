@@ -4,3 +4,6 @@ _opam/
 node_modules/
 web/dist/
 .DS_Store
+.claude/worktrees/
+web/public/playground/toplevel.js
+web/public/playground/toplevel.js.gz

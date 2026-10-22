@@ -3,7 +3,10 @@ import { Badge, type BadgeTone } from "./Badge";
 import { KeyValueList } from "./KeyValueList";
 import { Section } from "./Section";
 
-const SUPPORT: Record<PixelDecoding["library_support"], { tone: BadgeTone; text: string }> = {
+const SUPPORT: Record<
+  PixelDecoding["library_support"],
+  { tone: BadgeTone; text: string }
+> = {
   supported: { tone: "success", text: "supported" },
   unsupported: { tone: "warn", text: "unsupported" },
   unknown: { tone: "neutral", text: "unknown" },
@@ -18,14 +21,25 @@ export function PixelDecodingInfo({ decoding }: { decoding: PixelDecoding }) {
     >
       <KeyValueList
         items={[
-          { label: "Status", value: <span className="font-mono text-[0.8125rem]">{decoding.status}</span> },
+          {
+            label: "Status",
+            value: (
+              <span className="font-mono text-[0.8125rem]">
+                {decoding.status}
+              </span>
+            ),
+          },
           {
             label: "Decoder support (static assessment)",
             value: <Badge tone={support.tone}>{support.text}</Badge>,
           },
           {
             label: "Reason",
-            value: decoding.reason ?? <span className="text-zinc-600 italic dark:text-zinc-400">none given</span>,
+            value: decoding.reason ?? (
+              <span className="text-stone-600 italic dark:text-stone-400">
+                none given
+              </span>
+            ),
           },
         ]}
       />

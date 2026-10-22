@@ -1,4 +1,13 @@
 (test
  (name test_server)
  (package tiff-inspector)
- (libraries tiff_inspector tiff_inspector_server alcotest eio cstruct yojson))
+ (libraries
+  tiff_inspector
+  tiff_inspector_server
+  alcotest
+  eio
+  cstruct
+  yojson
+  http
+  fmt
+  unix))

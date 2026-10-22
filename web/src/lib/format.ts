@@ -11,7 +11,10 @@ export function formatBytes(bytes: number): string {
     value /= 1024;
     unit += 1;
   }
-  const rounded = value >= 100 || Number.isInteger(value) ? Math.round(value) : Number(value.toFixed(1));
+  const rounded =
+    value >= 100 || Number.isInteger(value)
+      ? Math.round(value)
+      : Number(value.toFixed(1));
   return `${rounded} ${UNITS[unit]}`;
 }
 
@@ -49,7 +52,13 @@ export function formatNumber(n: number): string {
 }
 
 export function isEnum(v: unknown): v is Enum {
-  return typeof v === "object" && v !== null && "code" in v && "name" in v && !Array.isArray(v);
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    "code" in v &&
+    "name" in v &&
+    !Array.isArray(v)
+  );
 }
 
 /** Render any FieldOf value (integer, number, list, enum, enum list) as text. */
@@ -74,9 +83,13 @@ export function tagValueItems(value: TagValue): string[] {
     case "integers":
       return value.items.map((n) => String(n));
     case "floats":
-      return value.items.map((n) => (n === null ? NON_FINITE : formatNumber(n)));
+      return value.items.map((n) =>
+        n === null ? NON_FINITE : formatNumber(n),
+      );
     case "rationals":
-      return value.items.map(([num, den]) => (den === 0 ? `${num}/0` : `${num}/${den}`));
+      return value.items.map(([num, den]) =>
+        den === 0 ? `${num}/0` : `${num}/${den}`,
+      );
     case "ascii":
       return [value.text];
   }

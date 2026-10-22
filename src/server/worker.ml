@@ -15,48 +15,107 @@ type outcome =
   | Output_too_large
   | Spawn_failed
 
-let max_output_bytes = 32 * 1024 * 1024
+(* One worker run with what is worth logging about it *)
+type result = {
+  outcome : outcome;
+  duration : float;  (** seconds *)
+  output_bytes : int;  (** stdout captured so far *)
+  stderr_tail : string;  (** last [max_stderr_bytes] of stderr *)
+}
+
+(* A schema-v1 report is far smaller than this given the core's own limits *)
+let max_output_bytes = 8 * 1024 * 1024
+let max_stderr_bytes = 4096
 
 let script ~memory_limit_mb =
   Printf.sprintf
-    "ulimit -v %d 2>/dev/null; exec \"$0\" inspect --format json \"$1\""
+    "ulimit -c 0 2>/dev/null; ulimit -v %d 2>/dev/null; exec \"$0\" inspect \
+     --format json \"$1\""
     (memory_limit_mb * 1024)
 
+let executable p =
+  try
+    Unix.access p [ Unix.X_OK ];
+    (Unix.stat p).st_kind = S_REG
+  with Unix.Unix_error _ -> false
+
+(* Keep the last [max_stderr_bytes] of a flow in [buf] *)
+let read_tail flow buf =
+  let chunk = Cstruct.create 4096 in
+  let rec go () =
+    match Eio.Flow.single_read flow chunk with
+    | n ->
+        Buffer.add_string buf (Cstruct.to_string (Cstruct.sub chunk 0 n));
+        if Buffer.length buf > 2 * max_stderr_bytes then (
+          let s = Buffer.contents buf in
+          Buffer.clear buf;
+          Buffer.add_string buf
+            (String.sub s (String.length s - max_stderr_bytes) max_stderr_bytes));
+        go ()
+    | exception End_of_file -> ()
+  in
+  try go () with Eio.Io _ -> ()
+
 let run ~fs ~mgr ~clock ~bin ~timeout ~memory_limit_mb path =
-  Eio.Switch.run @@ fun sw ->
-  let devnull_out =
-    Eio.Path.open_out ~sw ~create:`Never Eio.Path.(fs / "/dev/null")
+  let start = Unix.gettimeofday () in
+  let err = Buffer.create 1024 in
+  let output_bytes = ref 0 in
+  let outcome =
+    Eio.Switch.run @@ fun sw ->
+    let devnull_in = Eio.Path.open_in ~sw Eio.Path.(fs / "/dev/null") in
+    let r, w = Eio.Process.pipe ~sw mgr in
+    let er, ew = Eio.Process.pipe ~sw mgr in
+    let env =
+      Eio.Process.Env.of_bindings [ ("PATH", "/usr/bin:/bin"); ("LC_ALL", "C") ]
+    in
+    match
+      Eio.Process.spawn ~sw mgr ~stdin:devnull_in ~stdout:w ~stderr:ew ~env
+        ~executable:"/bin/sh"
+        [ "sh"; "-c"; script ~memory_limit_mb; bin; path ]
+    with
+    | exception Eio.Io _ -> Spawn_failed
+    | p -> (
+        Eio.Flow.close w;
+        Eio.Flow.close ew;
+        let read_out () =
+          let ic = Eio.Buf_read.of_flow ~max_size:max_output_bytes r in
+          try
+            let out = Eio.Buf_read.take_all ic in
+            output_bytes := String.length out;
+            Ok out
+          with Eio.Buf_read.Buffer_limit_exceeded ->
+            output_bytes := Eio.Buf_read.buffered_bytes ic;
+            Eio.Process.signal p Sys.sigkill;
+            Error `Too_large
+        in
+        match
+          Eio.Time.with_timeout clock timeout (fun () ->
+              Ok
+                (Eio.Fiber.pair read_out (fun () ->
+                     Eio.Fiber.pair
+                       (fun () -> read_tail er err)
+                       (fun () -> Eio.Process.await p))))
+        with
+        | Error `Timeout ->
+            Eio.Process.signal p Sys.sigkill;
+            ignore (Eio.Process.await p);
+            Timed_out
+        | Ok (Error `Too_large, _) -> Output_too_large
+        | Ok (_, ((), `Signaled s)) -> Signaled s
+        | Ok (Ok out, ((), `Exited n)) -> Exited (n, out))
   in
-  let devnull_in = Eio.Path.open_in ~sw Eio.Path.(fs / "/dev/null") in
-  let r, w = Eio.Process.pipe ~sw mgr in
-  let env =
-    Eio.Process.Env.of_bindings [ ("PATH", "/usr/bin:/bin"); ("LC_ALL", "C") ]
+  let tail = Buffer.contents err in
+  let tail =
+    if String.length tail > max_stderr_bytes then
+      String.sub tail (String.length tail - max_stderr_bytes) max_stderr_bytes
+    else tail
   in
-  match
-    Eio.Process.spawn ~sw mgr ~stdin:devnull_in ~stdout:w ~stderr:devnull_out
-      ~env ~executable:"/bin/sh"
-      [ "sh"; "-c"; script ~memory_limit_mb; bin; path ]
-  with
-  | exception Eio.Io _ -> Spawn_failed
-  | p -> (
-      Eio.Flow.close w;
-      let read_out () =
-        try Ok Eio.Buf_read.(take_all (of_flow ~max_size:max_output_bytes r))
-        with Eio.Buf_read.Buffer_limit_exceeded ->
-          Eio.Process.signal p Sys.sigkill;
-          Error `Too_large
-      in
-      match
-        Eio.Time.with_timeout clock timeout (fun () ->
-            Ok (Eio.Fiber.pair read_out (fun () -> Eio.Process.await p)))
-      with
-      | Error `Timeout ->
-          Eio.Process.signal p Sys.sigkill;
-          ignore (Eio.Process.await p);
-          Timed_out
-      | Ok (Error `Too_large, _) -> Output_too_large
-      | Ok (_, `Signaled s) -> Signaled s
-      | Ok (Ok out, `Exited n) -> Exited (n, out))
+  {
+    outcome;
+    duration = Unix.gettimeofday () -. start;
+    output_bytes = !output_bytes;
+    stderr_tail = tail;
+  }
 
 (* --- Mapping results to responses ------------------------------------------ *)
 
@@ -155,3 +214,35 @@ let interpret ~tmp_path ~name ~size outcome : Http.Status.t * Yojson.Safe.t =
               | Some c -> (status_of_code c, json)
               | None -> internal ())
           | _ -> internal ()))
+
+(* --- Logging --------------------------------------------------------------- *)
+
+(* Short description of a run for the request log line *)
+let summary r =
+  let what =
+    match r.outcome with
+    | Exited (n, _) -> Printf.sprintf "exit=%d" n
+    | Signaled s -> Printf.sprintf "signal=%d" s
+    | Timed_out -> "timeout"
+    | Output_too_large -> "output_too_large"
+    | Spawn_failed -> "spawn_failed"
+  in
+  Printf.sprintf "worker=%s %.0fms out=%dB" what (r.duration *. 1000.)
+    r.output_bytes
+
+(* Worker stderr for the log, on failures only: one line, control characters
+   replaced, and the temporary path scrubbed so no path is ever logged. *)
+let stderr_for_log ~tmp_path r =
+  match r.outcome with
+  | Exited (0, _) -> None
+  | _ when r.stderr_tail = "" -> None
+  | _ ->
+      let s =
+        r.stderr_tail
+        |> replace_all ~sub:tmp_path ~by:"<upload>"
+        |> replace_all ~sub:(Filename.basename tmp_path) ~by:"<upload>"
+        |> replace_all ~sub:(Filename.dirname tmp_path) ~by:"<tmpdir>"
+        |> String.map (fun c ->
+            if Char.code c < 0x20 || Char.code c = 0x7f then ' ' else c)
+      in
+      Some (String.trim s)

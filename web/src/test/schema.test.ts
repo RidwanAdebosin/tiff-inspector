@@ -6,8 +6,12 @@ import { describe, expect, it } from "vitest";
 import { successBody } from "./fixtures/successReport";
 
 const repoRoot = resolve(__dirname, "../../..");
-const schema = JSON.parse(readFileSync(join(repoRoot, "schema/inspection-report.v1.json"), "utf8"));
-const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema);
+const schema = JSON.parse(
+  readFileSync(join(repoRoot, "schema/inspection-report.v1.json"), "utf8"),
+);
+const validate = new Ajv2020({ allErrors: true, strict: false }).compile(
+  schema,
+);
 
 describe("mock fixture", () => {
   it("validates against inspection-report.v1.json", () => {

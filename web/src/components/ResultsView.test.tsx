@@ -34,16 +34,31 @@ describe("ResultsView overview", () => {
     expect(screen.getByText("Little-endian (II)")).toBeInTheDocument();
     expect(screen.getByText("Classic TIFF")).toBeInTheDocument();
     expect(screen.getByText("Complete")).toBeInTheDocument();
-    expect(screen.getByText(/2,048 bytes after the last referenced data/)).toBeInTheDocument();
-    expect(screen.getByText("Pixel data is not decoded in version 1.")).toBeInTheDocument();
+    expect(
+      screen.getByText(/2,048 bytes after the last referenced data/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Pixel data is not decoded in version 1."),
+    ).toBeInTheDocument();
   });
 
   it("warns when the IFD walk did not complete", () => {
     const report = {
       ...successReport,
-      ifd_walk: { status: "failed" as const, limit: 1024, error: { code: "truncated" as const, message: "IFD 2 is cut off." } },
+      ifd_walk: {
+        status: "failed" as const,
+        limit: 1024,
+        error: { code: "truncated" as const, message: "IFD 2 is cut off." },
+      },
     };
-    render(<ResultsView fileName="x.tif" report={report} rawBody="{}" onInspectAnother={() => {}} />);
+    render(
+      <ResultsView
+        fileName="x.tif"
+        report={report}
+        rawBody="{}"
+        onInspectAnother={() => {}}
+      />,
+    );
     expect(screen.getByText("Failed part-way")).toBeInTheDocument();
     expect(screen.getByText(/IFD 2 is cut off\./)).toBeInTheDocument();
   });
@@ -63,7 +78,10 @@ describe("IFD navigation", () => {
   it("moves between directories with arrow keys, Home and End (roving tabindex)", async () => {
     const user = userEvent.setup();
     renderResults();
-    const [first, second] = screen.getAllByRole("tab") as [HTMLElement, HTMLElement];
+    const [first, second] = screen.getAllByRole("tab") as [
+      HTMLElement,
+      HTMLElement,
+    ];
     expect(first).toHaveAttribute("tabindex", "0");
     expect(second).toHaveAttribute("tabindex", "-1");
 
@@ -105,8 +123,12 @@ describe("IFD navigation", () => {
     renderResults();
     await userEvent.click(screen.getAllByRole("tab")[1]!);
     const panel = screen.getByRole("tabpanel");
-    expect(within(panel).getByText(/Contiguous \(“chunky”\)/)).toBeInTheDocument();
-    expect(within(panel).getAllByText("spec default").length).toBeGreaterThan(0);
+    expect(
+      within(panel).getByText(/Contiguous \(“chunky”\)/),
+    ).toBeInTheDocument();
+    expect(within(panel).getAllByText("spec default").length).toBeGreaterThan(
+      0,
+    );
     expect(within(panel).getAllByText("not present")).toHaveLength(2);
   });
 });
@@ -120,12 +142,16 @@ describe("Download JSON", () => {
     });
     URL.revokeObjectURL = vi.fn();
     const clicked: HTMLAnchorElement[] = [];
-    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement,
+    ) {
       clicked.push(this);
     });
 
     renderResults();
-    await userEvent.click(screen.getByRole("button", { name: "Download JSON" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Download JSON" }),
+    );
 
     expect(clicked).toHaveLength(1);
     expect(clicked[0]!.download).toBe("survey-mosaic.tif.inspection.json");
@@ -147,13 +173,25 @@ describe("golden CLI reports", () => {
     .map((n) => [n, readFileSync(join(goldenDir, n), "utf8")] as const)
     .filter(([, body]) => (JSON.parse(body) as InspectionReport).ok);
 
-  it.skipIf(successes.length === 0).each(successes)("renders %s", async (_name, body) => {
-    const report = JSON.parse(body);
-    render(<ResultsView fileName={report.file.name} report={report} rawBody={body} onInspectAnother={() => {}} />);
-    expect(screen.getByRole("heading", { name: "Overview" })).toBeInTheDocument();
-    for (const tab of screen.queryAllByRole("tab")) {
-      await userEvent.click(tab);
-      expect(screen.getByRole("tabpanel")).toBeInTheDocument();
-    }
-  });
+  it.skipIf(successes.length === 0).each(successes)(
+    "renders %s",
+    async (_name, body) => {
+      const report = JSON.parse(body);
+      render(
+        <ResultsView
+          fileName={report.file.name}
+          report={report}
+          rawBody={body}
+          onInspectAnother={() => {}}
+        />,
+      );
+      expect(
+        screen.getByRole("heading", { name: "Overview" }),
+      ).toBeInTheDocument();
+      for (const tab of screen.queryAllByRole("tab")) {
+        await userEvent.click(tab);
+        expect(screen.getByRole("tabpanel")).toBeInTheDocument();
+      }
+    },
+  );
 });

@@ -6,12 +6,12 @@ open Report
 let fixture name = Filename.concat "../fixtures" name
 
 let inspect name =
-  match Inspect.file (fixture name) with
+  match Tiff_inspector_unix.file (fixture name) with
   | Ok r -> r
   | Error f -> Alcotest.failf "%s failed: %s" name f.error.message
 
 let fails name =
-  match Inspect.file (fixture name) with
+  match Tiff_inspector_unix.file (fixture name) with
   | Ok _ -> Alcotest.failf "%s unexpectedly succeeded" name
   | Error f -> f.error.code
 
@@ -143,6 +143,37 @@ let gray_alpha () =
   Alcotest.(check (list string))
     "library error surfaced" [ "library_error" ] (warning_codes d)
 
+(* Regression: three SHORTs stored inline in BigTIFF's 8-byte value field.
+   ocaml-tiff keeps only the first; the inspector must decode all three. *)
+let bigtiff_rgb_inline () =
+  let r = inspect "bigtiff_rgb_inline.tif" in
+  let d = List.hd r.directories in
+  Alcotest.(check bool) "bigtiff" true (r.file.format = Bigtiff);
+  check_field "bits"
+    Alcotest.(list int)
+    ~expect_status:Present
+    ~expect:(Some [ 8; 8; 8 ])
+    d.bits_per_sample;
+  Alcotest.check status "sample format present" Present d.sample_format.status;
+  Alcotest.(check (option (list int)))
+    "sample format"
+    (Some [ 1; 1; 1 ])
+    (codes d.sample_format);
+  Alcotest.(check (list int))
+    "plane bits" [ 8; 8; 8 ] (List.hd d.planes).bits_per_sample;
+  Alcotest.(check bool)
+    "decodable" true
+    (d.pixel_decoding.library_support = Supported);
+  Alcotest.(check (list string))
+    "no unreadable tags" []
+    (List.filter (( = ) "unreadable_tag_value") (warning_codes d));
+  List.iter
+    (fun (t : tag) ->
+      Alcotest.(check bool)
+        (Fmt.str "tag %d decoded" t.id)
+        true (t.value_status = Decoded))
+    d.tags
+
 let unknown_tag () =
   let d = dir "unknown_tag.tif" in
   let t = List.find (fun (t : tag) -> t.id = 65001) d.tags in
@@ -219,6 +250,168 @@ let mutations () =
       done)
     files
 
+(* {2 Classic TIFF offsets of 2 GiB and above} *)
+
+let header kind =
+  { Tiff.Ifd.kind; byte_order = Tiff.Endian.Little; offset = Optint.Int63.zero }
+
+let ctx kind = Decode.ctx (Source.of_string ~name:"x" "") (header kind)
+
+(* ocaml-tiff sign-extends classic offsets; the helper must undo that and
+   leave BigTIFF offsets alone *)
+let offset_mask () =
+  let classic = ctx Tiff and big = ctx Bigtiff in
+  Alcotest.(check int)
+    "classic >= 2 GiB" 0xFFFF_FFF0
+    (Decode.file_offset classic (Int64.of_int32 (-16l)));
+  Alcotest.(check int)
+    "classic 2 GiB" 0x8000_0000
+    (Decode.file_offset classic (Int64.of_int32 Int32.min_int));
+  Alcotest.(check int) "classic small" 8 (Decode.file_offset classic 8L);
+  Alcotest.(check int)
+    "bigtiff beyond 4 GiB" 0x1_0000_0000
+    (Decode.file_offset big 0x1_0000_0000L)
+
+(* A little-endian classic IFD: entries are (tag, type, count, value word) *)
+let classic_ifd entries ~next =
+  let b = Buffer.create 256 in
+  Buffer.add_uint16_le b (List.length entries);
+  List.iter
+    (fun (tag, typ, count, value) ->
+      Buffer.add_uint16_le b tag;
+      Buffer.add_uint16_le b typ;
+      Buffer.add_int32_le b (Int32.of_int count);
+      Buffer.add_int32_le b (Int32.of_int value))
+    entries;
+  Buffer.add_int32_le b (Int32.of_int next);
+  Buffer.contents b
+
+let classic_header ~first_ifd =
+  let b = Buffer.create 8 in
+  Buffer.add_string b "II";
+  Buffer.add_uint16_le b 42;
+  Buffer.add_int32_le b (Int32.of_int first_ifd);
+  Buffer.contents b
+
+(* A 4x4 gray8 image whose single strip and IFD both lie above 2 GiB, in a
+   sparse temporary file. Skipped when the file cannot be created quickly. *)
+let sparse_beyond_2gib () =
+  let strip = 0x8000_0000 and ifd = 0x8000_0010 in
+  let short = 3 and long = 4 in
+  let dir =
+    classic_ifd ~next:0
+      [
+        (256, short, 1, 4);
+        (257, short, 1, 4);
+        (258, short, 1, 8);
+        (259, short, 1, 1);
+        (262, short, 1, 1);
+        (273, long, 1, strip);
+        (277, short, 1, 1);
+        (278, short, 1, 4);
+        (279, long, 1, 16);
+      ]
+  in
+  let path = Filename.temp_file "tiff-inspector-sparse" ".tif" in
+  Fun.protect
+    ~finally:(fun () -> try Sys.remove path with Sys_error _ -> ())
+    (fun () ->
+      let t0 = Unix.gettimeofday () in
+      let written =
+        match Unix.openfile path [ O_WRONLY; O_TRUNC ] 0o600 with
+        | exception Unix.Unix_error _ -> false
+        | fd -> (
+            let write s =
+              if
+                Unix.write_substring fd s 0 (String.length s) <> String.length s
+              then failwith "short write"
+            in
+            match
+              Fun.protect
+                ~finally:(fun () -> Unix.close fd)
+                (fun () ->
+                  write (classic_header ~first_ifd:ifd);
+                  ignore (Unix.lseek fd strip SEEK_SET);
+                  write (String.make 16 'U');
+                  write dir)
+            with
+            | () -> true
+            | exception (Unix.Unix_error _ | Failure _) -> false)
+      in
+      if (not written) || Unix.gettimeofday () -. t0 > 2. then Alcotest.skip ()
+      else
+        match Tiff_inspector_unix.file path with
+        | Error f -> Alcotest.failf "sparse file failed: %s" f.error.message
+        | Ok r ->
+            Alcotest.(check int) "first ifd" ifd r.file.first_ifd_offset;
+            Alcotest.(check int)
+              "size"
+              (ifd + String.length dir)
+              r.file.size_bytes;
+            Alcotest.(check int) "1 ifd" 1 r.ifd_count;
+            Alcotest.(check bool) "complete" true (r.ifd_walk.status = Complete);
+            let d = List.hd r.directories in
+            Alcotest.(check int) "ifd offset" ifd d.offset;
+            Alcotest.(check (list int))
+              "strip offset" [ strip ] d.layout.offsets;
+            Alcotest.(check (option int)) "bytes" (Some 16) d.layout.total_bytes;
+            Alcotest.(check (list string)) "no warnings" [] (warning_codes d);
+            Alcotest.(check (list string))
+              "no file warnings" []
+              (List.map (fun w -> w.Problem.w_code) r.warnings))
+
+(* {2 Many strips} *)
+
+(* A 1 x n gray8 image with one row per strip: the bounds check over the
+   offset and byte-count lists must stay linear *)
+let many_strips () =
+  let n = 50_000 in
+  let data_offset = 8 in
+  let ifd = data_offset + n in
+  let entries = 9 in
+  let offsets_at = ifd + 2 + (entries * 12) + 4 in
+  let counts_at = offsets_at + (4 * n) in
+  let short = 3 and long = 4 in
+  let b = Buffer.create (counts_at + (4 * n)) in
+  Buffer.add_string b (classic_header ~first_ifd:ifd);
+  Buffer.add_string b (String.make n 'x');
+  Buffer.add_string b
+    (classic_ifd ~next:0
+       [
+         (256, short, 1, 1);
+         (257, short, 1, n);
+         (258, short, 1, 8);
+         (259, short, 1, 1);
+         (262, short, 1, 1);
+         (273, long, n, offsets_at);
+         (277, short, 1, 1);
+         (278, short, 1, 1);
+         (279, long, n, counts_at);
+       ]);
+  for i = 0 to n - 1 do
+    Buffer.add_int32_le b (Int32.of_int (data_offset + i))
+  done;
+  for _ = 1 to n do
+    Buffer.add_int32_le b 1l
+  done;
+  let src = Source.of_string ~name:"many_strips.tif" (Buffer.contents b) in
+  let t0 = Unix.gettimeofday () in
+  let r =
+    match Inspect.run src with
+    | Ok r -> r
+    | Error f -> Alcotest.failf "many strips failed: %s" f.error.message
+  in
+  let elapsed = Unix.gettimeofday () -. t0 in
+  let d = List.hd r.directories in
+  Alcotest.(check int) "strips" n d.layout.chunk_count;
+  Alcotest.(check (option int))
+    "expected" (Some n) d.layout.expected_chunk_count;
+  Alcotest.(check (option int)) "total bytes" (Some n) d.layout.total_bytes;
+  Alcotest.(check bool) "layout truncated" true d.layout.truncated;
+  Alcotest.(check (list string)) "no warnings" [] (warning_codes d);
+  if elapsed >= 1. then
+    Alcotest.failf "inspecting %d strips took %.2f s (limit 1 s)" n elapsed
+
 let json_roundtrip () =
   let json = Json.report (inspect "multi_ifd.tif") |> Json.to_string in
   let parsed = Yojson.Safe.from_string json in
@@ -248,6 +441,8 @@ let () =
           Alcotest.test_case "bigtiff" `Quick bigtiff;
           Alcotest.test_case "tiled" `Quick tiled;
           Alcotest.test_case "inline multi-value tag" `Quick gray_alpha;
+          Alcotest.test_case "bigtiff inline multi-value tags" `Quick
+            bigtiff_rgb_inline;
           Alcotest.test_case "unknown tags" `Quick unknown_tag;
         ] );
       ( "malformed",
@@ -258,5 +453,12 @@ let () =
           Alcotest.test_case "directory path" `Quick directory_path;
           Alcotest.test_case "random mutations" `Slow mutations;
         ] );
+      ( "offsets",
+        [
+          Alcotest.test_case "classic offsets are unsigned" `Quick offset_mask;
+          Alcotest.test_case "sparse file beyond 2 GiB" `Quick
+            sparse_beyond_2gib;
+        ] );
+      ("layout", [ Alcotest.test_case "50000 strips" `Quick many_strips ]);
       ("json", [ Alcotest.test_case "round trip" `Quick json_roundtrip ]);
     ]

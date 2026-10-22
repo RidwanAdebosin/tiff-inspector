@@ -20,7 +20,7 @@ is a regression fixture in `test/fixtures`.
 |---|---|
 | Width, height | Required. A missing one is a warning. |
 | SamplesPerPixel | Default 1 |
-| BitsPerSample, per sample | Default 1 per sample. Multi-value inline values are decoded correctly (fixture). |
+| BitsPerSample, per sample | Default 1 per sample. Multi-value inline values are decoded correctly, in classic TIFF and BigTIFF (fixtures). |
 | SampleFormat, per sample | Default 1. Offset-stored values are supported (fixture). Mixed formats produce a warning. |
 | Photometric interpretation | No default. Reported absent when missing. |
 | Planar configuration | Default 1. Planes are derived (one per sample when separate). |
@@ -44,8 +44,13 @@ directory:
 
 - A directory with an entry of unknown field type cannot be parsed by
   ocaml-tiff; the inspection fails with `unsupported_feature`.
-- BigTIFF entries with several BYTE/SHORT/LONG values packed inline are
-  reported as `unreadable`, because ocaml-tiff keeps only the first value.
 - ocaml-tiff's `Ifd.bits_per_sample` misreads multi-value inline entries;
-  the inspector reports it as a `library_error` warning (fixture
-  `gray_alpha.tif`) and uses its own decoding.
+  the inspector reports it as a `library_error` or `library_mismatch`
+  warning (fixtures `gray_alpha.tif`, `bigtiff_rgb_inline.tif`) and uses its
+  own decoding, which reads the value field directly.
+- Classic TIFF files larger than 2 GiB: the inspector reads IFD and value
+  offsets of 2 GiB and above correctly, but ocaml-tiff sign-extends them
+  when it loads a directory. A directory whose StripOffsets/StripByteCounts
+  arrays are stored out of line beyond 2 GiB therefore fails with
+  `truncated` (`ifd_walk_failed`); files whose directories are within the
+  first 2 GiB, or with a single strip, are fine.

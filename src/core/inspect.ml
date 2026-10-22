@@ -83,13 +83,17 @@ let read_header (src : Source.t) =
 
    ocaml-tiff allocates buffers from counts found in the file before reading
    them, and parses every entry eagerly. Check the parts it reads eagerly so a
-   crafted file is rejected before it can trigger a huge allocation. *)
+   crafted file is rejected before it can trigger a huge allocation.
+
+   Returns the raw value/offset field of every entry, in entry order, which
+   [Decode] uses instead of ocaml-tiff's decoded inline values. *)
 
 let preflight (src : Source.t) (header : Ifd.header) offset =
   let bigtiff = match header.kind with Bigtiff -> true | Tiff -> false in
   let count_size, entry_size, next_size =
     if bigtiff then (8, 20, 8) else (2, 12, 4)
   in
+  let word_size = if bigtiff then 8 else 4 in
   let e = header.byte_order in
   let fail code fmt =
     Fmt.kstr (fun m -> Error (Problem.error code "%s" m)) fmt
@@ -115,8 +119,12 @@ let preflight (src : Source.t) (header : Ifd.header) offset =
         Source.read src ~offset:(offset + count_size)
           ~length:(count * entry_size)
       in
+      let words =
+        Array.init count (fun i ->
+            Cstruct.sub entries ((i * entry_size) + 4 + word_size) word_size)
+      in
       let rec check i =
-        if i = count then Ok count
+        if i = count then Ok words
         else
           let base = i * entry_size in
           let tag = Tiff.Endian.uint16 ~offset:base e entries in
@@ -146,16 +154,17 @@ let preflight (src : Source.t) (header : Ifd.header) offset =
 
 (* {1 Field interpretation} *)
 
-let find ifd id =
-  List.find_opt (fun e -> Ifd.entry_tag_id e = id) (Ifd.entries ifd)
-
 type dir_ctx = {
   ctx : Decode.ctx;
   ifd : Ifd.t;
+  entries : (Ifd.entry * Cstruct.t) list;
+      (** Each entry with its raw value/offset field, from [preflight] *)
   index : int;
   limits : limits;
   mutable warnings : Problem.warning list;
 }
+
+let find d id = List.find_opt (fun (e, _) -> Ifd.entry_tag_id e = id) d.entries
 
 let warn d ?tag code fmt =
   Fmt.kstr
@@ -165,9 +174,9 @@ let warn d ?tag code fmt =
     fmt
 
 let ints d ?(max = 1) id =
-  match find d.ifd id with
+  match find d id with
   | None -> None
-  | Some entry -> Some (Decode.ints d.ctx ~max_items:max entry)
+  | Some (entry, word) -> Some (Decode.ints d.ctx ~max_items:max ~word entry)
 
 let int_field ?default d id =
   match ints d id with
@@ -199,10 +208,10 @@ let per_sample_field d id ~spp ~default ~name =
       Field.present l
 
 let rational_field d id =
-  match find d.ifd id with
+  match find d id with
   | None -> Field.absent ()
-  | Some entry -> (
-      match Decode.raw d.ctx ~max_items:1 entry with
+  | Some (entry, word) -> (
+      match Decode.raw d.ctx ~max_items:1 ~word entry with
       | Error `Unsupported_type -> Field.unsupported "unknown field type"
       | Error (`Unreadable m) -> Field.error m
       | Ok r -> (
@@ -236,11 +245,11 @@ let layout d ~width ~height ~spp ~planar : Report.layout =
   let planes = match planar with Some 2 -> spp | _ -> Some 1 in
   let div_up a b = (a + b - 1) / b in
   let list id =
-    match find d.ifd id with
+    match find d id with
     | None -> None
-    | Some entry -> (
+    | Some (entry, word) -> (
         let total = Ifd.entry_count entry |> Int64.to_int in
-        match Decode.ints d.ctx ~max_items:total entry with
+        match Decode.ints d.ctx ~max_items:total ~word entry with
         | Ok l -> Some (Ok l)
         | Error m ->
             warn d ~tag:id "unreadable_layout" "%s" m;
@@ -262,13 +271,18 @@ let layout d ~width ~height ~spp ~planar : Report.layout =
           (if kind = Report.Tiles then "tiles" else "strips")
           chunk_count
     | _ -> ());
-    if List.length cnts <> List.length offs then
-      warn d "offset_count_mismatch" "%d offsets but %d byte counts"
-        (List.length offs) (List.length cnts);
+    let n_offs = List.length offs and n_cnts = List.length cnts in
+    if n_cnts <> n_offs then
+      warn d "offset_count_mismatch" "%d offsets but %d byte counts" n_offs
+        n_cnts;
+    (* Pairs up to the shorter list, in linear time *)
+    let rec zip acc offs cnts =
+      match (offs, cnts) with
+      | o :: offs, c :: cnts -> zip ((o, c) :: acc) offs cnts
+      | _ -> List.rev acc
+    in
     let out_of_bounds =
-      List.combine
-        (List.filteri (fun i _ -> i < List.length cnts) offs)
-        (List.filteri (fun i _ -> i < List.length offs) cnts)
+      zip [] offs cnts
       |> List.filter (fun (o, c) -> o < 0 || c < 0 || o > d.ctx.source.size - c)
     in
     (match out_of_bounds with
@@ -294,11 +308,11 @@ let layout d ~width ~height ~spp ~planar : Report.layout =
         | Some (Ok l) -> Some (List.fold_left ( + ) 0 l)
         | _ -> None);
       truncated =
-        List.length offs > d.limits.max_layout_values
-        || List.length cnts > d.limits.max_layout_values;
+        n_offs > d.limits.max_layout_values
+        || n_cnts > d.limits.max_layout_values;
     }
   in
-  let has id = Option.is_some (find d.ifd id) in
+  let has id = Option.is_some (find d id) in
   if has tag_tile_offsets || has tag_tile_width then
     let tw = int_field d tag_tile_width and th = int_field d tag_tile_height in
     let expected =
@@ -419,8 +433,9 @@ let pixel_support ~layout ~compression ~predictor ~planar ~bits ~formats :
 
 (* {1 Directories} *)
 
-let directory ~limits ctx ~index ~offset ifd : Report.directory =
-  let d = { ctx; ifd; index; limits; warnings = [] } in
+let directory ~limits ctx ~index ~offset ~words ifd : Report.directory =
+  let entries = List.mapi (fun i e -> (e, words.(i))) (Ifd.entries ifd) in
+  let d = { ctx; ifd; entries; index; limits; warnings = [] } in
   let width = int_field d tag_width and height = int_field d tag_height in
   List.iter
     (fun (f, name) ->
@@ -475,7 +490,9 @@ let directory ~limits ctx ~index ~offset ifd : Report.directory =
   in
   let planar_code = Option.map code planar.value in
   let tags =
-    List.map (Decode.tag ctx ~max_items:limits.max_tag_values) (Ifd.entries ifd)
+    List.map
+      (fun (e, word) -> Decode.tag ctx ~max_items:limits.max_tag_values ~word e)
+      entries
   in
   List.iter
     (fun (t : Report.tag) ->
@@ -522,8 +539,11 @@ let directory ~limits ctx ~index ~offset ifd : Report.directory =
 
 (* {1 IFD chain} *)
 
-let walk ~limits (src : Source.t) header =
-  let ctx = Decode.ctx src header in
+let file_offset ctx (o : Optint.Int63.t) =
+  Decode.file_offset ctx (Optint.Int63.to_int64 o)
+
+let walk ~limits (ctx : Decode.ctx) header =
+  let src = ctx.source in
   let rec go index offset visited acc =
     if index >= limits.max_ifds then
       (List.rev acc, Report.Truncated_at_limit, None)
@@ -531,21 +551,23 @@ let walk ~limits (src : Source.t) header =
       let parsed =
         match preflight src header offset with
         | Error e -> Error e
-        | Ok _ ->
+        | Ok words ->
             Guard.run (fun () ->
-                Ifd.v ~file_offset:(Optint.Int63.of_int offset) header src.ro)
+                ( Ifd.v ~file_offset:(Optint.Int63.of_int offset) header src.ro,
+                  words ))
       in
       match parsed with
       | Error e -> (List.rev acc, Report.Failed, Some e)
-      | Ok ifd -> (
+      | Ok (ifd, words) -> (
           let dir =
-            Guard.run (fun () -> directory ~limits ctx ~index ~offset ifd)
+            Guard.run (fun () ->
+                directory ~limits ctx ~index ~offset ~words ifd)
           in
           match dir with
           | Error e -> (List.rev acc, Failed, Some e)
           | Ok dir -> (
               let acc = dir :: acc in
-              let next = Ifd.next_ifd_offset ifd |> Optint.Int63.to_int in
+              let next = Ifd.next_ifd_offset ifd |> file_offset ctx in
               match next with
               | 0 -> (List.rev acc, Complete, None)
               | next when List.mem next visited ->
@@ -557,7 +579,7 @@ let walk ~limits (src : Source.t) header =
                          next) )
               | next -> go (index + 1) next (next :: visited) acc))
   in
-  let first = Optint.Int63.to_int header.offset in
+  let first = file_offset ctx header.offset in
   go 0 first [ first ] []
 
 let run ?(limits = default_limits) (src : Source.t) :
@@ -568,7 +590,8 @@ let run ?(limits = default_limits) (src : Source.t) :
   match read_header src with
   | Error e -> fail e
   | Ok header -> (
-      match walk ~limits src header with
+      let ctx = Decode.ctx src header in
+      match walk ~limits ctx header with
       | [], _, Some e -> fail e
       | [], _, None ->
           fail (Problem.error Malformed "The file contains no directories")
@@ -603,7 +626,7 @@ let run ?(limits = default_limits) (src : Source.t) :
                     (match header.kind with
                     | Tiff -> Classic_tiff
                     | Bigtiff -> Bigtiff);
-                  first_ifd_offset = Optint.Int63.to_int header.offset;
+                  first_ifd_offset = file_offset ctx header.offset;
                 };
               ifd_count = List.length directories;
               ifd_walk = { status; limit = limits.max_ifds; error };
@@ -611,9 +634,3 @@ let run ?(limits = default_limits) (src : Source.t) :
               warnings;
               limitations;
             })
-
-let file ?limits path =
-  match Source.with_file path (run ?limits) with
-  | Ok r -> r
-  | Error error ->
-      Error { failed_file = Some (Filename.basename path, None); error }

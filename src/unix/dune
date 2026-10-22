@@ -1,0 +1,4 @@
+(library
+ (name tiff_inspector_unix)
+ (public_name tiff-inspector.unix)
+ (libraries tiff_inspector tiff.unix unix))

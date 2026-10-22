@@ -73,6 +73,53 @@
   (diff bigtiff.json bigtiff.json.out)))
 
 (rule
+ (deps ../fixtures/bigtiff_rgb_inline.tif)
+ (action
+  (with-stdout-to
+   bigtiff_rgb_inline.txt.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       text
+       --tags
+       bigtiff_rgb_inline.tif)))))))
+
+(rule
+ (alias runtest)
+ (action
+  (diff bigtiff_rgb_inline.txt bigtiff_rgb_inline.txt.out)))
+
+(rule
+ (deps ../fixtures/bigtiff_rgb_inline.tif)
+ (action
+  (with-stdout-to
+   bigtiff_rgb_inline.json.out
+   (with-stderr-to
+    %{null}
+    (with-accepted-exit-codes
+     (or 0 1)
+     (chdir
+      ../fixtures
+      (run
+       %{bin:tiff-inspector}
+       inspect
+       --format
+       json
+       bigtiff_rgb_inline.tif)))))))
+
+(rule
+ (alias runtest)
+ (action
+  (diff bigtiff_rgb_inline.json bigtiff_rgb_inline.json.out)))
+
+(rule
  (deps ../fixtures/deflate.tif)
  (action
   (with-stdout-to

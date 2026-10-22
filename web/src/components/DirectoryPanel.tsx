@@ -11,7 +11,7 @@ import { TagTable } from "./TagTable";
 export function DirectoryPanel({ dir }: { dir: Directory }) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-stone-600 dark:text-stone-400">
         IFD {dir.index} at offset{" "}
         <span className="font-mono">
           {formatInteger(dir.offset)} ({formatHex(dir.offset)})

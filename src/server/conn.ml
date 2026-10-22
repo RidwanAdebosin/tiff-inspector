@@ -17,6 +17,7 @@ type request = {
   path : string;
   headers : Http.Header.t;
   peer : string;  (** Peer IP address *)
+  framing : Framing.t;  (** How the body is delimited *)
   body : Eio.Flow.source_ty Eio.Resource.t;
 }
 
@@ -25,10 +26,11 @@ type response = {
   headers : (string * string) list;
   body : string;
   close : bool;  (** Force closing the connection after this response *)
+  note : string;  (** Appended to the request log line *)
 }
 
-let response ?(headers = []) ?(close = false) status body =
-  { status; headers; body; close }
+let response ?(headers = []) ?(close = false) ?(note = "") status body =
+  { status; headers; body; close; note }
 
 (* --- Request body as an Eio source with a byte limit ---------------------- *)
 
@@ -86,10 +88,10 @@ let wants_continue (req : Http.Request.t) =
   | Some v -> String.lowercase_ascii (String.trim v) = "100-continue"
   | None -> false
 
-let make_body ~limit (req : Http.Request.t) ic oc =
+let make_body ~limit ~framing (req : Http.Request.t) ic oc =
   let state =
-    match Http.Request.has_body req with
-    | `No ->
+    match framing with
+    | Framing.Empty | Fixed 0 ->
         {
           Body.read_chunk = (fun () -> Cohttp.Transfer.Done);
           buf = "";
@@ -99,7 +101,7 @@ let make_body ~limit (req : Http.Request.t) ic oc =
           finished = true;
           before_first_read = None;
         }
-    | `Yes | `Unknown ->
+    | Fixed _ | Chunked ->
         let reader = Req_io.make_body_reader req ic in
         {
           Body.read_chunk = (fun () -> Req_io.read_body_chunk reader);
@@ -144,12 +146,14 @@ let clean_path p =
     (fun c -> if Char.code c < 0x20 || Char.code c = 0x7f then '?' else c)
     p
 
-let log_request ~meth ~path ~status ~start =
-  Printf.eprintf "%s %s %d %.1fms\n%!"
+let log_request ~meth ~path ~status ~start ~note =
+  Printf.eprintf "%s %s %d %.1fms%s%s\n%!"
     (Http.Method.to_string meth)
     (clean_path path)
     (Http.Status.to_int status)
     ((Unix.gettimeofday () -. start) *. 1000.)
+    (if note = "" then "" else " ")
+    note
 
 (* --- Connection loop ------------------------------------------------------ *)
 
@@ -180,7 +184,11 @@ let lingering_close ~clock flow ic =
 let bad_request_body =
   {|{"schema_version":"1.0","ok":false,"error":{"code":"invalid_request","message":"Malformed HTTP request"}}|}
 
-let handle ~clock ~body_limit ~(handler : request -> response) flow peer =
+(* [stop] resolves when the server drains: idle keep-alive connections are
+   closed, a request already being received is still served, and no response
+   offers keep-alive afterwards. *)
+let handle ~clock ~body_limit ~(stop : unit Eio.Promise.t)
+    ~(handler : request -> response) flow peer =
   let ic =
     Eio.Buf_read.of_flow ~initial_size:0x4000 ~max_size:max_header_buffer flow
   in
@@ -193,29 +201,58 @@ let handle ~clock ~body_limit ~(handler : request -> response) flow peer =
            ~headers:[ ("content-type", "application/json") ]);
       true
     in
-    let rec loop () =
-      match
+    let read_request () =
+      let read () =
         Eio.Time.with_timeout clock idle_timeout (fun () -> Ok (Req_io.read ic))
+      in
+      match
+        Eio.Fiber.first
+          (fun () -> `Read (read ()))
+          (fun () ->
+            Eio.Promise.await stop;
+            `Stop)
       with
+      | `Read r -> r
+      | `Stop when Eio.Buf_read.buffered_bytes ic = 0 -> Ok `Eof
+      | `Stop -> read ()
+    in
+    let rec loop () =
+      match read_request () with
       | Error `Timeout | Ok `Eof -> false
       | exception End_of_file -> false
       | exception Eio.Buf_read.Buffer_limit_exceeded ->
           reject `Request_header_fields_too_large
       | Ok (`Invalid _) -> reject `Bad_request
-      | Ok (`Ok req) ->
-          let start = Unix.gettimeofday () in
-          let body, state = make_body ~limit:body_limit req ic oc in
-          let path = Uri.path (Uri.of_string (Http.Request.resource req)) in
-          let r =
-            handler { meth = req.meth; path; headers = req.headers; peer; body }
-          in
-          let finished = state.finished in
-          let keep_alive =
-            Http.Request.is_keep_alive req && finished && not r.close
-          in
-          write_response oc ~meth:req.meth ~keep_alive r;
-          log_request ~meth:req.meth ~path ~status:r.status ~start;
-          if keep_alive then loop () else not finished
+      | Ok (`Ok req) -> (
+          match Framing.of_headers req.headers with
+          | Error _ -> reject `Bad_request
+          | Ok framing ->
+              let start = Unix.gettimeofday () in
+              let body, state =
+                make_body ~limit:body_limit ~framing req ic oc
+              in
+              let path = Uri.path (Uri.of_string (Http.Request.resource req)) in
+              let r =
+                handler
+                  {
+                    meth = req.meth;
+                    path;
+                    headers = req.headers;
+                    peer;
+                    framing;
+                    body;
+                  }
+              in
+              let finished = state.finished in
+              let keep_alive =
+                Http.Request.is_keep_alive req
+                && finished && (not r.close)
+                && not (Eio.Promise.is_resolved stop)
+              in
+              write_response oc ~meth:req.meth ~keep_alive r;
+              log_request ~meth:req.meth ~path ~status:r.status ~start
+                ~note:r.note;
+              if keep_alive then loop () else not finished)
     in
     loop ()
   in

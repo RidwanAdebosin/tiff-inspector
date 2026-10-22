@@ -1,0 +1,61 @@
+TIFF INSPECTOR
+==============
+
+File: bigtiff_rgb_inline.tif
+File size: 300 bytes
+Byte order: Little-endian
+Format: BigTIFF
+Image directories: 1
+
+Image
+-----
+Width: 4
+Height: 4
+
+Samples
+-------
+Samples per pixel: 3
+Sample format: Unsigned integer (1), Unsigned integer (1), Unsigned integer (1)
+Bits per sample: 8, 8, 8
+
+Storage
+-------
+Photometric interpretation: RGB (2)
+Planar configuration: Contiguous (chunky) (1)
+Compression: None (1)
+Predictor: None (1) (default, tag absent)
+Rows per strip: 4
+Strips: 1
+Image data: 48 bytes
+
+Planes
+------
+Plane 0: 4x4, samples [0, 1, 2], bits [8, 8, 8]
+
+Other
+-----
+Orientation: Top-left (1) (default, tag absent)
+X resolution: unknown (tag absent)
+Y resolution: unknown (tag absent)
+Resolution unit: Inch (2) (default, tag absent)
+Pixel decoding (ocaml-tiff): supported (not attempted)
+
+Tags
+----
+ID       Name                         Type          Count  Value
+256      ImageWidth                   short             1  4
+257      ImageLength                  short             1  4
+258      BitsPerSample                short             3  8, 8, 8
+259      Compression                  short             1  1
+262      PhotometricInterpretation    short             1  2
+273      StripOffsets                 long8             1  16
+277      SamplesPerPixel              short             1  3
+278      RowsPerStrip                 short             1  4
+279      StripByteCounts              long8             1  48
+284      PlanarConfiguration          short             1  1
+339      SampleFormat                 short             3  1, 1, 1
+
+Warnings
+--------
+- [library_mismatch] ocaml-tiff reports BitsPerSample = [0; 0; 0], the file says [8; 8; 8]
+

@@ -26,5 +26,7 @@ export const PREVIEW_ITEMS = 8;
 export function isLongValue(tag: Tag): boolean {
   if (tag.value === null) return false;
   const len = tagValueLength(tag.value);
-  return tag.value.kind === "ascii" ? len > COLLAPSE_CHARS : len > COLLAPSE_ITEMS;
+  return tag.value.kind === "ascii"
+    ? len > COLLAPSE_CHARS
+    : len > COLLAPSE_ITEMS;
 }

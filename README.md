@@ -80,6 +80,27 @@ Nothing is stored. See [src/server/README.md](src/server/README.md).
 API: `POST /api/v1/inspections` (multipart field `file`) → inspection report;
 `GET /api/v1/health` → `{"status":"ok"}`.
 
+## Playground
+
+The web app also has an OCaml playground at `/playground`: an editor where you
+can write OCaml, run it and see compile errors underlined. It is the OCaml
+toplevel compiled to JavaScript with [js_of_ocaml](https://ocsigen.org/js_of_ocaml/),
+with the standard library, the vendored `tiff` library and the inspector core
+linked in, plus a few sample files from `test/fixtures`. Code runs in a web
+worker in the visitor's browser; nothing is sent to the server.
+
+Build the bundle once (it is not committed) before running the web app in
+development:
+
+```sh
+opam install . --deps-only          # also installs js_of_ocaml
+scripts/build-playground.sh         # writes web/public/playground/toplevel.js
+```
+
+The Docker image builds it as part of the OCaml stage. The sources are in
+`playground/`: `top.ml` is the entry point, `test.ml` and `sample.ml` are the
+helpers available as `Test` and `Sample` in the editor.
+
 ## Deploying
 
 The [Dockerfile](Dockerfile) builds one image that serves the UI and the API

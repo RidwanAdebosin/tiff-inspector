@@ -49,7 +49,9 @@ describe("TagTable", () => {
     render(<TagTable tags={ifd0.tags} directoryIndex={0} />);
     await userEvent.type(screen.getByLabelText("Search tags"), "StripOffsets");
     const row = bodyRows()[0]!;
-    const toggle = within(row).getByRole("button", { name: "Show all 64 values" });
+    const toggle = within(row).getByRole("button", {
+      name: "Show all 64 values",
+    });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     const lastOffset = String(ifd0.layout.offsets.at(-1));
     expect(row).not.toHaveTextContent(lastOffset);
@@ -68,22 +70,33 @@ describe("TagTable", () => {
     await userEvent.type(screen.getByLabelText("Search tags"), "270");
     const row = bodyRows()[0]!;
     expect(row).not.toHaveTextContent("Processing pipeline v4.2.");
-    await userEvent.click(within(row).getByRole("button", { name: /Show all \d+ characters/ }));
+    await userEvent.click(
+      within(row).getByRole("button", { name: /Show all \d+ characters/ }),
+    );
     expect(row).toHaveTextContent("Processing pipeline v4.2.");
   });
 
   it("shows value_status and note for truncated values", async () => {
     render(<TagTable tags={ifd0.tags} directoryIndex={0} />);
-    await userEvent.type(screen.getByLabelText("Search tags"), "StripByteCounts");
+    await userEvent.type(
+      screen.getByLabelText("Search tags"),
+      "StripByteCounts",
+    );
     const row = bodyRows()[0]!;
     expect(within(row).getByText("truncated")).toBeInTheDocument();
-    expect(within(row).getByText("64 of 300 values included")).toBeInTheDocument();
-    expect(within(row).getByText("Only the first 64 values are included.")).toBeInTheDocument();
+    expect(
+      within(row).getByText("64 of 300 values included"),
+    ).toBeInTheDocument();
+    expect(
+      within(row).getByText("Only the first 64 values are included."),
+    ).toBeInTheDocument();
   });
 
   it("renders non-finite floats explicitly", () => {
     render(<TagTable tags={ifd0.tags} directoryIndex={0} />);
-    expect(screen.getByText("0.25, 0.25, NaN/∞ (non-finite)")).toBeInTheDocument();
+    expect(
+      screen.getByText("0.25, 0.25, NaN/∞ (non-finite)"),
+    ).toBeInTheDocument();
   });
 
   it("shows unsupported field types with an unknown type name", () => {

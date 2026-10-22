@@ -6,7 +6,11 @@ export function reportFileName(originalName: string): string {
 /**
  * Save `text` exactly as given (no re-serialisation) as a file download.
  */
-export function downloadText(text: string, filename: string, type = "application/json"): void {
+export function downloadText(
+  text: string,
+  filename: string,
+  type = "application/json",
+): void {
   const blob = new Blob([text], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
