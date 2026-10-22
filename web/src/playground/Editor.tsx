@@ -1,10 +1,24 @@
-import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
-import { StreamLanguage, bracketMatching, indentOnInput } from "@codemirror/language";
+import {
+  defaultKeymap,
+  history,
+  historyKeymap,
+  indentWithTab,
+} from "@codemirror/commands";
+import {
+  StreamLanguage,
+  bracketMatching,
+  indentOnInput,
+} from "@codemirror/language";
 import { oCaml } from "@codemirror/legacy-modes/mode/mllike";
 import { lintGutter, setDiagnostics, type Diagnostic } from "@codemirror/lint";
 import { Compartment, EditorState } from "@codemirror/state";
 import { oneDark } from "@codemirror/theme-one-dark";
-import { EditorView, highlightActiveLine, keymap, lineNumbers } from "@codemirror/view";
+import {
+  EditorView,
+  highlightActiveLine,
+  keymap,
+  lineNumbers,
+} from "@codemirror/view";
 import { useEffect, useRef } from "react";
 import type { Problem } from "./protocol";
 
@@ -20,11 +34,17 @@ const darkQuery = "(prefers-color-scheme: dark)";
 
 const baseTheme = EditorView.theme({
   "&": { fontSize: "0.8125rem", height: "100%" },
-  ".cm-scroller": { fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", lineHeight: "1.5" },
+  ".cm-scroller": {
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+    lineHeight: "1.5",
+  },
   ".cm-content": { padding: "0.75rem 0" },
 });
 
-const lightTheme = EditorView.theme({ "&": { backgroundColor: "white" } }, { dark: false });
+const lightTheme = EditorView.theme(
+  { "&": { backgroundColor: "white" } },
+  { dark: false },
+);
 
 function toDiagnostics(state: EditorState, problems: Problem[]): Diagnostic[] {
   const out: Diagnostic[] = [];
@@ -40,7 +60,13 @@ function toDiagnostics(state: EditorState, problems: Problem[]): Diagnostic[] {
 }
 
 /** A CodeMirror editor with OCaml highlighting; Mod-Enter runs the code. */
-export function Editor({ value, onChange, onRun, problems, label }: EditorProps) {
+export function Editor({
+  value,
+  onChange,
+  onRun,
+  problems,
+  label,
+}: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -82,7 +108,8 @@ export function Editor({ value, onChange, onRun, problems, label }: EditorProps)
         ],
       }),
     });
-    const onMedia = (e: MediaQueryListEvent) => v.dispatch({ effects: theme.reconfigure(pick(e.matches)) });
+    const onMedia = (e: MediaQueryListEvent) =>
+      v.dispatch({ effects: theme.reconfigure(pick(e.matches)) });
     media.addEventListener("change", onMedia);
     view.current = v;
     return () => {

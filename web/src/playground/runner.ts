@@ -11,7 +11,9 @@ export type Runner = {
 
 export class TimeoutError extends Error {
   constructor(ms: number) {
-    super(`Stopped after ${Math.round(ms / 1000)} s: the code did not finish. The toplevel was restarted.`);
+    super(
+      `Stopped after ${Math.round(ms / 1000)} s: the code did not finish. The toplevel was restarted.`,
+    );
     this.name = "TimeoutError";
   }
 }
@@ -35,7 +37,12 @@ export function createRunner(opts: RunnerOptions): Runner {
   let readyPromise: Promise<string> = Promise.reject(new Error("not started"));
   readyPromise.catch(() => {});
   let nextId = 1;
-  let pending: { id: number; resolve: (r: RunResult) => void; reject: (e: Error) => void; timer: number } | null = null;
+  let pending: {
+    id: number;
+    resolve: (r: RunResult) => void;
+    reject: (e: Error) => void;
+    timer: number;
+  } | null = null;
 
   const failPending = (err: Error) => {
     if (!pending) return;
@@ -59,7 +66,12 @@ export function createRunner(opts: RunnerOptions): Runner {
           clearTimeout(pending.timer);
           const { resolve: done } = pending;
           pending = null;
-          done({ chunks: msg.chunks, locations: msg.locations, passed: msg.passed, failed: msg.failed });
+          done({
+            chunks: msg.chunks,
+            locations: msg.locations,
+            passed: msg.passed,
+            failed: msg.failed,
+          });
         }
       };
       w.onerror = (e) => {
@@ -67,7 +79,11 @@ export function createRunner(opts: RunnerOptions): Runner {
         reject(err);
         failPending(err);
       };
-      const init: ToWorker = { type: "init", bundle: opts.bundleUrl, samples: opts.samples };
+      const init: ToWorker = {
+        type: "init",
+        bundle: opts.bundleUrl,
+        samples: opts.samples,
+      };
       w.postMessage(init);
     });
     readyPromise.catch(() => {});
@@ -102,11 +118,15 @@ export function createRunner(opts: RunnerOptions): Runner {
 }
 
 /** Fetches every sample so the worker can register them before the first run. */
-export async function fetchSamples(base: string, names: string[]): Promise<SampleFile[]> {
+export async function fetchSamples(
+  base: string,
+  names: string[],
+): Promise<SampleFile[]> {
   return Promise.all(
     names.map(async (name) => {
       const res = await fetch(`${base}playground/samples/${name}`);
-      if (!res.ok) throw new Error(`Could not load sample ${name} (${res.status})`);
+      if (!res.ok)
+        throw new Error(`Could not load sample ${name} (${res.status})`);
       return { name, bytes: await res.arrayBuffer() };
     }),
   );

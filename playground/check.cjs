@@ -55,6 +55,24 @@ assert(/TIFF signature/.test(text(r, "answer")), "malformed samples report an er
 r = run('Sample.get "nope";;');
 assert(/Exception:[\s\S]*no sample named/.test(text(r, "answer")), "runtime exceptions are shown");
 
+r = run(`(* no ;; anywhere, like the examples *)
+let greet name = Printf.sprintf "Hello, %s!" name
+
+let () = print_endline (greet "world")
+
+let squares = List.init 6 (fun i -> i * i)
+let total = List.fold_left ( + ) 0 squares
+`);
+assert(r.locations.length === 0 && text(r, "stderr") === "", "code without ;; runs: " + JSON.stringify(text(r, "stderr")));
+assert(text(r, "stdout") === "Hello, world!\n", "its prints arrive");
+assert(/val total : int = 55/.test(text(r, "answer")), "and every definition is echoed");
+
+r = run("let before = 1\nlet broken : int = \"no\"\nlet after = 2;;");
+assert(r.locations.length === 1 && r.locations[0].loc === "2:19:2:23", "error located without ;;: " + JSON.stringify(r.locations));
+assert(/val before : int = 1/.test(text(r, "answer")) && !/after/.test(text(r, "answer")), "runs up to the error, then stops");
+r = run("before + 1;;");
+assert(/= 2/.test(text(r, "answer")), "definitions before the error survive");
+
 r = run("let z = x + 40;;");
 assert(/val z : int = 42/.test(text(r, "answer")), "definitions persist between runs");
 

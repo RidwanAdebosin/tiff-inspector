@@ -18,7 +18,12 @@ type DropZoneProps = {
 
 const INPUT_ACCEPT = [...ACCEPTED_EXTENSIONS, "image/tiff"].join(",");
 
-export function DropZone({ inputRef, disabled, onFile, onNote }: DropZoneProps) {
+export function DropZone({
+  inputRef,
+  disabled,
+  onFile,
+  onNote,
+}: DropZoneProps) {
   const [dragging, setDragging] = useState(false);
   // dragenter/dragleave fire for every child element crossed; the highlight
   // only ends when the nesting depth returns to zero.
@@ -63,13 +68,25 @@ export function DropZone({ inputRef, disabled, onFile, onNote }: DropZoneProps) 
       onDragEnd={endDrag}
       onDrop={onDrop}
       data-dragging={dragging || undefined}
-      className="flex flex-col items-center gap-3 rounded-lg border-2 border-dashed border-zinc-300 bg-white px-4 py-10 text-center transition-colors data-dragging:border-blue-600 data-dragging:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:data-dragging:border-blue-400 dark:data-dragging:bg-blue-950"
+      className="flex flex-col items-center gap-3 rounded-xl border-2 border-dashed border-stone-300 bg-white px-4 py-12 text-center transition-colors data-dragging:border-amber-600 data-dragging:bg-amber-50 dark:border-stone-700 dark:bg-stone-900 dark:data-dragging:border-amber-400 dark:data-dragging:bg-amber-950"
     >
-      <Upload aria-hidden className="size-6 text-zinc-500 dark:text-zinc-400" />
-      <button type="button" className={primaryButton} disabled={disabled} onClick={() => inputRef.current?.click()}>
+      <span className="flex size-12 items-center justify-center rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+        <Upload aria-hidden className="size-6" />
+      </span>
+      <button
+        type="button"
+        className={primaryButton}
+        disabled={disabled}
+        onClick={() => inputRef.current?.click()}
+      >
         Choose a TIFF file
       </button>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">or drag and drop it here</p>
+      <p className="text-sm text-stone-600 dark:text-stone-400">
+        or drag and drop it here
+      </p>
+      <p className="text-xs text-stone-500 dark:text-stone-500">
+        Any .tif or .tiff, classic or BigTIFF. We'll check it before uploading.
+      </p>
       <input
         ref={inputRef}
         type="file"

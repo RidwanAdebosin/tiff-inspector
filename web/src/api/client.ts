@@ -44,15 +44,20 @@ const CODE_TO_KIND: Record<ErrorCode, ErrorKind> = {
 };
 
 const DEFAULT_MESSAGES: Record<ErrorKind, string> = {
-  invalid_file: "The file is not a TIFF that can be inspected.",
-  unsupported_feature: "The file uses a TIFF feature this version cannot inspect.",
+  invalid_file:
+    "We couldn't find a TIFF structure in it. If it was renamed from another format, try the original.",
+  unsupported_feature:
+    "It uses a TIFF feature this version can't inspect yet, so the report would be incomplete.",
   limit_exceeded:
-    "Inspecting this file took more time or memory than the server allows for a single file. It may succeed when the server is less busy.",
-  malformed: "The file is truncated or malformed and could not be inspected.",
-  oversized: "The file is larger than the maximum upload size.",
-  rate_limited: "Too many inspections in a short time. Wait a moment and try again.",
-  network: "Could not reach the inspection service. Check your connection and try again.",
-  server: "The inspection service failed unexpectedly. Try again later.",
+    "It needs more memory or time than this free service allows. A smaller file will work, and the command-line tool has no limit.",
+  malformed:
+    "It's cut off or its structure is broken, so we couldn't read it all the way through. If you have another copy, try that one.",
+  oversized:
+    "Uploads here are limited to 25 MB. The command-line tool handles files of any size.",
+  rate_limited:
+    "You've sent a lot of files in a short time. Give it a moment and try again.",
+  network: "Check your connection and try again. Your file is still selected.",
+  server: "That's on us, not your file. Please try again in a moment.",
 };
 
 export function defaultMessage(kind: ErrorKind): string {
@@ -63,7 +68,10 @@ export function defaultMessage(kind: ErrorKind): string {
  * Parse a `Retry-After` header value: delay-seconds, or an HTTP-date, into
  * whole seconds from now (never negative). Unparseable values give undefined.
  */
-export function parseRetryAfter(value: string | null | undefined, now = Date.now()): number | undefined {
+export function parseRetryAfter(
+  value: string | null | undefined,
+  now = Date.now(),
+): number | undefined {
   if (value === null || value === undefined) return undefined;
   const text = value.trim();
   if (/^\d+$/.test(text)) return Number(text);
@@ -111,7 +119,8 @@ function kindFromStatus(status: number, isJson: boolean): ErrorKind {
   if (status === 0) return "network";
   if (status === 413) return "oversized";
   if (status === 429) return "rate_limited";
-  if (!isJson && (status === 502 || status === 503 || status === 504)) return "network";
+  if (!isJson && (status === 502 || status === 503 || status === 504))
+    return "network";
   if (status === 415 || status === 400) return "invalid_file";
   if (status === 422) return "malformed";
   return "server";
@@ -122,27 +131,47 @@ function kindFromStatus(status: number, isJson: boolean): ErrorKind {
  * header) to a result. Pure, so it can be unit-tested without XHR. Non-JSON
  * bodies (e.g. proxy error pages) are classified by status alone.
  */
-export function interpretResponse(status: number, body: string, retryAfter?: string | null): InspectionResult {
+export function interpretResponse(
+  status: number,
+  body: string,
+  retryAfter?: string | null,
+): InspectionResult {
   const json = parseJson(body);
 
   if (status >= 200 && status < 300) {
     if (isSuccessReport(json)) return { ok: true, report: json, rawBody: body };
     return {
       ok: false,
-      error: { kind: "server", status, message: "The server returned a response this page does not understand." },
+      error: {
+        kind: "server",
+        status,
+        message:
+          "The server returned a response this page does not understand.",
+      },
     };
   }
 
-  const error = isFailureReport(json) ? errorFromReport(json, status) : errorFromStatus(status, json !== undefined);
+  const error = isFailureReport(json)
+    ? errorFromReport(json, status)
+    : errorFromStatus(status, json !== undefined);
   const retryAfterSeconds = parseRetryAfter(retryAfter);
-  if (retryAfterSeconds !== undefined) error.retryAfterSeconds = retryAfterSeconds;
+  if (retryAfterSeconds !== undefined)
+    error.retryAfterSeconds = retryAfterSeconds;
   return { ok: false, error };
 }
 
-function errorFromReport(report: FailureReport, status: number): InspectionError {
+function errorFromReport(
+  report: FailureReport,
+  status: number,
+): InspectionError {
   const code = report.error.code;
   const kind = CODE_TO_KIND[code] ?? kindFromStatus(status, true);
-  return { kind, code, status, message: report.error.message || defaultMessage(kind) };
+  return {
+    kind,
+    code,
+    status,
+    message: report.error.message || defaultMessage(kind),
+  };
 }
 
 function errorFromStatus(status: number, isJson: boolean): InspectionError {
@@ -167,7 +196,10 @@ export type UploadHandle = {
  * POST the file as multipart/form-data (single field `file`). Uses XHR rather
  * than fetch so upload progress can be reported.
  */
-export function uploadInspection(file: File, callbacks: UploadCallbacks = {}): UploadHandle {
+export function uploadInspection(
+  file: File,
+  callbacks: UploadCallbacks = {},
+): UploadHandle {
   const xhr = new XMLHttpRequest();
   let aborted = false;
   const promise = new Promise<InspectionResult>((resolve) => {
@@ -182,14 +214,21 @@ export function uploadInspection(file: File, callbacks: UploadCallbacks = {}): U
     };
 
     xhr.upload.onprogress = (e) => {
-      if (!aborted) callbacks.onProgress?.(e.loaded, e.lengthComputable ? e.total : 0);
+      if (!aborted)
+        callbacks.onProgress?.(e.loaded, e.lengthComputable ? e.total : 0);
     };
     xhr.upload.onload = () => {
       if (!aborted) callbacks.onUploaded?.();
     };
 
     xhr.onload = () =>
-      settle(() => interpretResponse(xhr.status, xhr.responseText, xhr.getResponseHeader("retry-after")));
+      settle(() =>
+        interpretResponse(
+          xhr.status,
+          xhr.responseText,
+          xhr.getResponseHeader("retry-after"),
+        ),
+      );
     xhr.onerror = () => settle(() => interpretResponse(0, ""));
     xhr.ontimeout = () => settle(() => interpretResponse(0, ""));
     xhr.onabort = () => resolve({ ok: false, cancelled: true });

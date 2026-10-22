@@ -3,10 +3,16 @@
  * previous ones on cleanup. Icons are <link rel="icon"> elements; the SVG is
  * preferred and the PNG covers browsers that ignore SVG icons.
  */
-export function applyPageIcon(opts: { title: string; svg: string; png: string }): () => void {
+export function applyPageIcon(opts: {
+  title: string;
+  svg: string;
+  png: string;
+}): () => void {
   const head = document.head;
   const previousTitle = document.title;
-  const previous = Array.from(head.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
+  const previous = Array.from(
+    head.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'),
+  );
   for (const link of previous) link.remove();
 
   const svg = document.createElement("link");

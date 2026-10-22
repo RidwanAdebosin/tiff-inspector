@@ -8,8 +8,17 @@ const file = (name: string) => new File(["II*\0"], name);
 function setup(disabled = false) {
   const onFile = vi.fn();
   const onNote = vi.fn();
-  render(<DropZone inputRef={createRef<HTMLInputElement>()} disabled={disabled} onFile={onFile} onNote={onNote} />);
-  const zone = screen.getByRole("button", { name: "Choose a TIFF file" }).parentElement!;
+  render(
+    <DropZone
+      inputRef={createRef<HTMLInputElement>()}
+      disabled={disabled}
+      onFile={onFile}
+      onNote={onNote}
+    />,
+  );
+  const zone = screen.getByRole("button", {
+    name: "Choose a TIFF file",
+  }).parentElement!;
   const child = screen.getByText("or drag and drop it here");
   return { zone, child, onFile, onNote };
 }
@@ -73,7 +82,9 @@ describe("DropZone drop feedback", () => {
 
   it("inspects only the first of several files and notes it", () => {
     const { zone, onFile, onNote } = setup();
-    fireEvent.drop(zone, { dataTransfer: { files: [file("a.tif"), file("b.tif"), file("c.tif")] } });
+    fireEvent.drop(zone, {
+      dataTransfer: { files: [file("a.tif"), file("b.tif"), file("c.tif")] },
+    });
     expect(onFile).toHaveBeenCalledTimes(1);
     expect((onFile.mock.calls[0]![0] as File).name).toBe("a.tif");
     expect(onNote).toHaveBeenCalledWith("Only the first file was inspected");
@@ -81,21 +92,27 @@ describe("DropZone drop feedback", () => {
 
   it("asks for a TIFF when no file is dropped (text or URL)", () => {
     const { zone, onFile, onNote } = setup();
-    fireEvent.drop(zone, { dataTransfer: { files: [], types: ["text/uri-list"] } });
+    fireEvent.drop(zone, {
+      dataTransfer: { files: [], types: ["text/uri-list"] },
+    });
     expect(onFile).not.toHaveBeenCalled();
     expect(onNote).toHaveBeenCalledWith("Drop a .tif or .tiff file");
   });
 
   it("ignores drops while disabled", () => {
     const { zone, onFile, onNote } = setup(true);
-    fireEvent.drop(zone, { dataTransfer: { files: [file("a.tif"), file("b.tif")] } });
+    fireEvent.drop(zone, {
+      dataTransfer: { files: [file("a.tif"), file("b.tif")] },
+    });
     expect(onFile).not.toHaveBeenCalled();
     expect(onNote).not.toHaveBeenCalled();
   });
 
   it("clears the note when a file is picked through the input", () => {
     const { zone, onFile, onNote } = setup();
-    fireEvent.drop(zone, { dataTransfer: { files: [], types: ["text/plain"] } });
+    fireEvent.drop(zone, {
+      dataTransfer: { files: [], types: ["text/plain"] },
+    });
     expect(onNote).toHaveBeenLastCalledWith("Drop a .tif or .tiff file");
 
     const input = screen.getByLabelText("TIFF file") as HTMLInputElement;
@@ -106,6 +123,9 @@ describe("DropZone drop feedback", () => {
 
   it("accepts the BigTIFF extensions in the file picker", () => {
     setup();
-    expect(screen.getByLabelText("TIFF file")).toHaveAttribute("accept", ".tif,.tiff,.btf,.tf8,image/tiff");
+    expect(screen.getByLabelText("TIFF file")).toHaveAttribute(
+      "accept",
+      ".tif,.tiff,.btf,.tf8,image/tiff",
+    );
   });
 });

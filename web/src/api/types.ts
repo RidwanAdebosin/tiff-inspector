@@ -26,7 +26,8 @@ export type ErrorCode =
 /**
  * present: read from a tag. default: tag absent, TIFF spec default applied. absent: tag absent, no default. unsupported: present but cannot be interpreted. error: reading failed.
  */
-export type FieldStatus = "present" | "default" | "absent" | "unsupported" | "error";
+export type FieldStatus =
+  "present" | "default" | "absent" | "unsupported" | "error";
 export type TagValue =
   | {
       kind: "integers";

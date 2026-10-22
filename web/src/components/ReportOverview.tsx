@@ -1,5 +1,12 @@
 import type { SuccessReport } from "../api/types";
-import { formatByteOrder, formatBytes, formatExactBytes, formatHex, formatInteger, formatTiffFormat } from "../lib/format";
+import {
+  formatByteOrder,
+  formatBytes,
+  formatExactBytes,
+  formatHex,
+  formatInteger,
+  formatTiffFormat,
+} from "../lib/format";
 import { Badge } from "./Badge";
 import { KeyValueList } from "./KeyValueList";
 import { ProblemList } from "./ProblemList";
@@ -17,13 +24,18 @@ export function ReportOverview({ report }: { report: SuccessReport }) {
     <Section title="Overview" level={2}>
       <KeyValueList
         items={[
-          { label: "File name", value: <span className="font-mono break-all">{file.name}</span> },
+          {
+            label: "File name",
+            value: <span className="font-mono break-all">{file.name}</span>,
+          },
           {
             label: "Size",
             value: (
               <>
                 {formatBytes(file.size_bytes)}{" "}
-                <span className="text-zinc-600 dark:text-zinc-400">({formatExactBytes(file.size_bytes)})</span>
+                <span className="text-stone-600 dark:text-stone-400">
+                  ({formatExactBytes(file.size_bytes)})
+                </span>
               </>
             ),
           },
@@ -33,7 +45,8 @@ export function ReportOverview({ report }: { report: SuccessReport }) {
             label: "First IFD offset",
             value: (
               <span className="font-mono">
-                {formatInteger(file.first_ifd_offset)} ({formatHex(file.first_ifd_offset)})
+                {formatInteger(file.first_ifd_offset)} (
+                {formatHex(file.first_ifd_offset)})
               </span>
             ),
           },
@@ -47,30 +60,44 @@ export function ReportOverview({ report }: { report: SuccessReport }) {
                 <span className="space-y-1">
                   <Badge tone="warn">{WALK_TEXT[walk.status]}</Badge>
                   <span className="block text-sm">
-                    Not every directory may be listed (limit: {formatInteger(walk.limit)} IFDs).
+                    Not every directory may be listed (limit:{" "}
+                    {formatInteger(walk.limit)} IFDs).
                     {walk.error && (
                       <>
                         {" "}
-                        {walk.error.message} <span className="font-mono text-xs">({walk.error.code})</span>
+                        {walk.error.message}{" "}
+                        <span className="font-mono text-xs">
+                          ({walk.error.code})
+                        </span>
                       </>
                     )}
                   </span>
                 </span>
               ),
           },
-          { label: "Inspected by", value: <span className="font-mono">{`${report.tool.name} ${report.tool.version}`}</span> },
+          {
+            label: "Inspected by",
+            value: (
+              <span className="font-mono">{`${report.tool.name} ${report.tool.version}`}</span>
+            ),
+          },
         ]}
       />
 
       <div className="mt-4 space-y-2">
         <h3 className="text-sm font-semibold">File warnings</h3>
-        <ProblemList problems={report.warnings} emptyText="No file-level warnings." />
+        <ProblemList
+          problems={report.warnings}
+          emptyText="No file-level warnings."
+        />
       </div>
 
       {report.limitations.length > 0 && (
         <div className="mt-4 space-y-2">
-          <h3 className="text-sm font-semibold">Limitations of this inspection</h3>
-          <ul className="list-disc space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-300">
+          <h3 className="text-sm font-semibold">
+            Limitations of this inspection
+          </h3>
+          <ul className="list-disc space-y-1 pl-5 text-sm text-stone-700 dark:text-stone-300">
             {report.limitations.map((l) => (
               <li key={l}>{l}</li>
             ))}

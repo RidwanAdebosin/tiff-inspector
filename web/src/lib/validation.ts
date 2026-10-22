@@ -38,22 +38,28 @@ export function isTiffSignature(bytes: ArrayLike<number>): boolean {
   return SIGNATURES.some((sig) => sig.every((b, i) => bytes[i] === b));
 }
 
-export function validateFileMeta(file: Pick<File, "name" | "size">): ValidationResult {
+export function validateFileMeta(
+  file: Pick<File, "name" | "size">,
+): ValidationResult {
   if (!hasAcceptedExtension(file.name)) {
     return {
       ok: false,
       reason: "extension",
-      message: `“${file.name}” is not a ${formatAcceptedExtensions()} file. Choose a TIFF file to inspect.`,
+      message: `“${file.name}” isn't a ${formatAcceptedExtensions()} file. Pick a TIFF and we'll take it from there.`,
     };
   }
   if (file.size === 0) {
-    return { ok: false, reason: "empty", message: `“${file.name}” is empty (0 bytes).` };
+    return {
+      ok: false,
+      reason: "empty",
+      message: `“${file.name}” is empty (0 bytes), so there's nothing to inspect yet.`,
+    };
   }
   if (file.size > MAX_UPLOAD_BYTES) {
     return {
       ok: false,
       reason: "size",
-      message: `“${file.name}” is ${formatBytes(file.size)}; the maximum upload size is ${formatBytes(MAX_UPLOAD_BYTES)}.`,
+      message: `“${file.name}” is ${formatBytes(file.size)}, and uploads here are limited to ${formatBytes(MAX_UPLOAD_BYTES)}. The command-line tool handles any size.`,
     };
   }
   return { ok: true };
@@ -80,13 +86,17 @@ export async function validateFile(file: File): Promise<ValidationResult> {
   try {
     header = await readHeader(file);
   } catch {
-    return { ok: false, reason: "unreadable", message: `“${file.name}” could not be read by the browser.` };
+    return {
+      ok: false,
+      reason: "unreadable",
+      message: `Your browser couldn't read “${file.name}”. Try choosing it again.`,
+    };
   }
   if (!isTiffSignature(header)) {
     return {
       ok: false,
       reason: "signature",
-      message: `“${file.name}” has a TIFF extension but does not start with a TIFF signature (II*\\0, MM\\0*, II+\\0 or MM\\0+).`,
+      message: `“${file.name}” has a TIFF name, but its contents don't start with a TIFF signature. It may be another format that was renamed; try the original file.`,
     };
   }
   return { ok: true };

@@ -45,24 +45,39 @@ export function useInspection() {
       send({ type: "validation_passed" });
 
       const handle = uploadInspection(file, {
-        onProgress: (loaded, total) => send({ type: "upload_progress", loaded, total }),
+        onProgress: (loaded, total) =>
+          send({ type: "upload_progress", loaded, total }),
         onUploaded: () => send({ type: "uploaded" }),
       });
       abortRef.current = handle.abort;
       const outcome = await handle.promise;
       abortRef.current = null;
       // A cancelled request has already been taken back to idle by `cancel`.
-      if (outcome.ok) send({ type: "succeeded", report: outcome.report, rawBody: outcome.rawBody });
-      else if (!outcome.cancelled) send({ type: "failed", error: outcome.error });
+      if (outcome.ok)
+        send({
+          type: "succeeded",
+          report: outcome.report,
+          rawBody: outcome.rawBody,
+        });
+      else if (!outcome.cancelled)
+        send({ type: "failed", error: outcome.error });
     } finally {
       runningRef.current = false;
     }
   }, []);
 
-  const select = useCallback((file: File) => void run(file, { type: "select", file }), [run]);
+  const select = useCallback(
+    (file: File) => void run(file, { type: "select", file }),
+    [run],
+  );
 
   const retry = useCallback(() => {
-    if (state.phase !== "error" || state.file === null || !isRetryable(state.kind)) return;
+    if (
+      state.phase !== "error" ||
+      state.file === null ||
+      !isRetryable(state.kind)
+    )
+      return;
     void run(state.file, { type: "retry" });
   }, [state, run]);
 

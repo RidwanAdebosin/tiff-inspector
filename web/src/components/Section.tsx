@@ -10,7 +10,13 @@ type SectionProps = {
   children: ReactNode;
 };
 
-export function Section({ title, level = 3, description, actions, children }: SectionProps) {
+export function Section({
+  title,
+  level = 3,
+  description,
+  actions,
+  children,
+}: SectionProps) {
   const id = useId();
   const Heading = level === 2 ? "h2" : "h3";
   return (
@@ -20,7 +26,11 @@ export function Section({ title, level = 3, description, actions, children }: Se
           <Heading id={id} className="text-base font-semibold">
             {title}
           </Heading>
-          {description && <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{description}</p>}
+          {description && (
+            <p className="mt-1 text-sm text-stone-600 dark:text-stone-400">
+              {description}
+            </p>
+          )}
         </div>
         {actions}
       </div>

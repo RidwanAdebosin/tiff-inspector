@@ -13,10 +13,15 @@ function currentPage(): Page {
   return path === "/playground" ? "playground" : "inspector";
 }
 
-const navLink = "rounded px-2 py-1 text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800";
-const navActive = "bg-zinc-100 dark:bg-zinc-800";
+const navLink =
+  "rounded px-2 py-1 text-sm font-medium hover:bg-stone-100 dark:hover:bg-stone-800";
+const navActive = "bg-stone-100 dark:bg-stone-800";
 
-function Inspector({ mainRef }: { mainRef: React.RefObject<HTMLElement | null> }) {
+function Inspector({
+  mainRef,
+}: {
+  mainRef: React.RefObject<HTMLElement | null>;
+}) {
   const { state, busy, select, retry, cancel, reset } = useInspection();
   const showingResults = state.phase === "success";
 
@@ -31,9 +36,20 @@ function Inspector({ mainRef }: { mainRef: React.RefObject<HTMLElement | null> }
   }, [showingResults, mainRef]);
 
   return state.phase === "success" ? (
-    <ResultsView fileName={state.file.name} report={state.report} rawBody={state.rawBody} onInspectAnother={reset} />
+    <ResultsView
+      fileName={state.file.name}
+      report={state.report}
+      rawBody={state.rawBody}
+      onInspectAnother={reset}
+    />
   ) : (
-    <UploadScreen state={state} busy={busy} onFile={select} onRetry={retry} onCancel={cancel} />
+    <UploadScreen
+      state={state}
+      busy={busy}
+      onFile={select}
+      onRetry={retry}
+      onCancel={cancel}
+    />
   );
 }
 
@@ -43,12 +59,16 @@ function App() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+      <header className="border-b border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
         <div className="mx-auto flex max-w-6xl items-center gap-2 px-4 py-3">
           <FileSearch aria-hidden className="size-5" />
           <span className="font-semibold">TIFF Inspector</span>
           <nav aria-label="Pages" className="ml-auto flex gap-1">
-            <a href="/" className={`${navLink} ${page === "inspector" ? navActive : ""}`} aria-current={page === "inspector" ? "page" : undefined}>
+            <a
+              href="/"
+              className={`${navLink} ${page === "inspector" ? navActive : ""}`}
+              aria-current={page === "inspector" ? "page" : undefined}
+            >
               Inspector
             </a>
             <a
@@ -61,9 +81,19 @@ function App() {
           </nav>
         </div>
       </header>
-      <main ref={mainRef} tabIndex={-1} className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 focus:outline-none">
+      <main
+        ref={mainRef}
+        tabIndex={-1}
+        className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 focus:outline-none"
+      >
         {page === "playground" ? (
-          <Suspense fallback={<p className="text-sm text-zinc-600 dark:text-zinc-400">Loading the playground…</p>}>
+          <Suspense
+            fallback={
+              <p className="text-sm text-stone-600 dark:text-stone-400">
+                Loading the playground…
+              </p>
+            }
+          >
             <Playground />
           </Suspense>
         ) : (

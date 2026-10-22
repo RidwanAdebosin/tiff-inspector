@@ -9,9 +9,17 @@ function location(p: Problem): string | null {
   return parts.length ? parts.join(", ") : null;
 }
 
-export function ProblemList({ problems, emptyText }: { problems: Problem[]; emptyText?: string }) {
+export function ProblemList({
+  problems,
+  emptyText,
+}: {
+  problems: Problem[];
+  emptyText?: string;
+}) {
   if (problems.length === 0) {
-    return emptyText ? <p className="text-sm text-zinc-600 dark:text-zinc-400">{emptyText}</p> : null;
+    return emptyText ? (
+      <p className="text-sm text-stone-600 dark:text-stone-400">{emptyText}</p>
+    ) : null;
   }
   return (
     <ul className="space-y-2">

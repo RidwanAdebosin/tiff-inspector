@@ -11,21 +11,43 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("./runner", () => ({
   fetchSamples: vi.fn(async () => []),
-  createRunner: vi.fn(() => ({ ready: mocks.ready, run: mocks.run, dispose: mocks.dispose })),
+  createRunner: vi.fn(() => ({
+    ready: mocks.ready,
+    run: mocks.run,
+    dispose: mocks.dispose,
+  })),
   TimeoutError: class TimeoutError extends Error {},
 }));
 
 // CodeMirror needs layout APIs jsdom lacks; a textarea keeps the tests about the page.
 vi.mock("./Editor", () => ({
-  Editor: ({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) => (
-    <textarea aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} />
+  Editor: ({
+    value,
+    onChange,
+    label,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    label: string;
+  }) => (
+    <textarea
+      aria-label={label}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+    />
   ),
 }));
 
 import Playground from "./Playground";
 import { EXAMPLES } from "./examples";
 
-const ok = (over: Partial<RunResult> = {}): RunResult => ({ chunks: [], locations: [], passed: 0, failed: 0, ...over });
+const ok = (over: Partial<RunResult> = {}): RunResult => ({
+  chunks: [],
+  locations: [],
+  passed: 0,
+  failed: 0,
+  ...over,
+});
 
 describe("Playground", () => {
   beforeEach(() => {
@@ -37,7 +59,11 @@ describe("Playground", () => {
     render(<Playground />);
     expect(screen.getByLabelText("OCaml code")).toHaveValue(EXAMPLES[0].code);
     expect(screen.getByRole("button", { name: /run/i })).toBeDisabled();
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("OCaml 5.4.1"));
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Ready. OCaml 5.4.1",
+      ),
+    );
     expect(screen.getByRole("button", { name: /run/i })).toBeEnabled();
   });
 
@@ -56,13 +82,24 @@ describe("Playground", () => {
     );
     const user = userEvent.setup();
     render(<Playground />);
-    await waitFor(() => expect(screen.getByRole("button", { name: /run/i })).toBeEnabled());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /run/i })).toBeEnabled(),
+    );
     await user.click(screen.getByRole("button", { name: /run/i }));
-    await waitFor(() => expect(screen.getByText("1 passed, 1 failed")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("1 of 2 checks passed")).toBeInTheDocument(),
+    );
+    expect(screen.getByText("1 problem")).toBeInTheDocument();
     expect(mocks.run).toHaveBeenCalledWith(EXAMPLES[0].code);
-    expect(screen.getByText(/Error: boom/)).toHaveAttribute("data-kind", "stderr");
-    expect(screen.getByText(/- : unit = \(\)/)).toHaveAttribute("data-kind", "answer");
-    expect(screen.getByRole("status")).toHaveTextContent("Some checks failed");
+    expect(screen.getByText(/Error: boom/)).toHaveAttribute(
+      "data-kind",
+      "stderr",
+    );
+    expect(screen.getByText(/- : unit = \(\)/)).toHaveAttribute(
+      "data-kind",
+      "answer",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("One thing to fix");
   });
 
   it("shows the OCaml camel in the tab while open, then restores the previous icon", () => {
@@ -72,13 +109,43 @@ describe("Playground", () => {
     document.head.append(original);
     document.title = "Before";
     const { unmount } = render(<Playground />);
-    const icons = Array.from(document.head.querySelectorAll<HTMLLinkElement>('link[rel="icon"]'));
-    expect(icons.map((l) => l.getAttribute("href"))).toEqual(["/playground/ocaml-icon.svg", "/playground/ocaml-icon-32.png"]);
+    const icons = Array.from(
+      document.head.querySelectorAll<HTMLLinkElement>('link[rel="icon"]'),
+    );
+    expect(icons.map((l) => l.getAttribute("href"))).toEqual([
+      "/playground/ocaml-icon.svg",
+      "/playground/ocaml-icon-32.png",
+    ]);
     expect(document.title).toBe("OCaml playground · TIFF Inspector");
     unmount();
-    expect(Array.from(document.head.querySelectorAll('link[rel="icon"]'))).toEqual([original]);
+    expect(
+      Array.from(document.head.querySelectorAll('link[rel="icon"]')),
+    ).toEqual([original]);
     expect(document.title).toBe("Before");
     original.remove();
+  });
+
+  it("celebrates when every check passes and nothing is wrong", async () => {
+    mocks.run.mockResolvedValue(
+      ok({
+        chunks: [{ kind: "stdout", text: "PASS a\nPASS b\n" }],
+        passed: 2,
+        failed: 0,
+      }),
+    );
+    const user = userEvent.setup();
+    render(<Playground />);
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /run/i })).toBeEnabled(),
+    );
+    await user.click(screen.getByRole("button", { name: /run/i }));
+    await waitFor(() =>
+      expect(screen.getByText("All 2 checks passed")).toBeInTheDocument(),
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "All 2 checks passed.",
+    );
+    expect(screen.queryByText(/problem/)).toBeNull();
   });
 
   it("switches examples", async () => {
@@ -89,9 +156,15 @@ describe("Playground", () => {
   });
 
   it("explains when the toplevel cannot be loaded", async () => {
-    mocks.ready.mockRejectedValue(new Error("Could not load /playground/toplevel.js: 404"));
+    mocks.ready.mockRejectedValue(
+      new Error("Could not load /playground/toplevel.js: 404"),
+    );
     render(<Playground />);
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Could not load /playground/toplevel.js"));
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Could not load /playground/toplevel.js",
+      ),
+    );
     expect(screen.getByRole("button", { name: /run/i })).toBeDisabled();
   });
 });

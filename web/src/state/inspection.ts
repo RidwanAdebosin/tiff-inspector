@@ -45,7 +45,11 @@ export type InspectionAction =
 export const initialState: InspectionState = { phase: "idle" };
 
 export function isBusy(state: InspectionState): boolean {
-  return state.phase === "validating" || state.phase === "uploading" || state.phase === "parsing";
+  return (
+    state.phase === "validating" ||
+    state.phase === "uploading" ||
+    state.phase === "parsing"
+  );
 }
 
 /** A request is on the wire (or being parsed) and can be cancelled. */
@@ -55,10 +59,18 @@ export function isCancellable(state: InspectionState): boolean {
 
 /** Retrying only helps with transient failures; bad files need a different file. */
 export function isRetryable(kind: ErrorKind): boolean {
-  return kind === "network" || kind === "server" || kind === "rate_limited" || kind === "limit_exceeded";
+  return (
+    kind === "network" ||
+    kind === "server" ||
+    kind === "rate_limited" ||
+    kind === "limit_exceeded"
+  );
 }
 
-export function inspectionReducer(state: InspectionState, action: InspectionAction): InspectionState {
+export function inspectionReducer(
+  state: InspectionState,
+  action: InspectionAction,
+): InspectionState {
   switch (action.type) {
     case "select":
       if (isBusy(state)) return state;
@@ -66,11 +78,21 @@ export function inspectionReducer(state: InspectionState, action: InspectionActi
 
     case "validation_failed":
       if (state.phase !== "validating") return state;
-      return { phase: "error", file: state.file, kind: "invalid_file", message: action.message };
+      return {
+        phase: "error",
+        file: state.file,
+        kind: "invalid_file",
+        message: action.message,
+      };
 
     case "validation_passed":
       if (state.phase !== "validating") return state;
-      return { phase: "uploading", file: state.file, loaded: 0, total: state.file.size };
+      return {
+        phase: "uploading",
+        file: state.file,
+        loaded: 0,
+        total: state.file.size,
+      };
 
     case "upload_progress":
       if (state.phase !== "uploading") return state;
@@ -81,13 +103,28 @@ export function inspectionReducer(state: InspectionState, action: InspectionActi
       return { phase: "parsing", file: state.file };
 
     case "succeeded":
-      if (state.phase !== "uploading" && state.phase !== "parsing") return state;
-      return { phase: "success", file: state.file, report: action.report, rawBody: action.rawBody };
+      if (state.phase !== "uploading" && state.phase !== "parsing")
+        return state;
+      return {
+        phase: "success",
+        file: state.file,
+        report: action.report,
+        rawBody: action.rawBody,
+      };
 
     case "failed": {
-      if (state.phase !== "uploading" && state.phase !== "parsing") return state;
+      if (state.phase !== "uploading" && state.phase !== "parsing")
+        return state;
       const { kind, message, code, status, retryAfterSeconds } = action.error;
-      return { phase: "error", file: state.file, kind, message, code, status, retryAfterSeconds };
+      return {
+        phase: "error",
+        file: state.file,
+        kind,
+        message,
+        code,
+        status,
+        retryAfterSeconds,
+      };
     }
 
     case "cancel":
@@ -95,7 +132,12 @@ export function inspectionReducer(state: InspectionState, action: InspectionActi
       return initialState;
 
     case "retry":
-      if (state.phase !== "error" || state.file === null || !isRetryable(state.kind)) return state;
+      if (
+        state.phase !== "error" ||
+        state.file === null ||
+        !isRetryable(state.kind)
+      )
+        return state;
       return { phase: "validating", file: state.file };
 
     case "reset":

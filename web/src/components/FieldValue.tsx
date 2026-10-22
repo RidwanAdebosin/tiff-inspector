@@ -3,7 +3,11 @@ import { formatFieldValue } from "../lib/format";
 import { Badge } from "./Badge";
 
 /** Structural shape shared by every FieldOf-derived type (IntField, EnumField, …). */
-export type AnyField = { status: FieldStatus; value: unknown; note: string | null };
+export type AnyField = {
+  status: FieldStatus;
+  value: unknown;
+  note: string | null;
+};
 
 type FieldValueProps<F extends AnyField> = {
   field: F;
@@ -12,11 +16,14 @@ type FieldValueProps<F extends AnyField> = {
   unit?: string;
 };
 
-const DEFAULT_NOTE = "Tag not present in the file; this is the TIFF specification default, not a value read from the file.";
+const DEFAULT_NOTE =
+  "Tag not present in the file; this is the TIFF specification default, not a value read from the file.";
 
 function Note({ text }: { text: string | null }) {
   if (!text) return null;
-  return <span className="text-xs text-zinc-600 dark:text-zinc-400">{text}</span>;
+  return (
+    <span className="text-xs text-stone-600 dark:text-stone-400">{text}</span>
+  );
 }
 
 /**
@@ -24,7 +31,11 @@ function Note({ text }: { text: string | null }) {
  * every other status is labelled so inferred or missing values are never
  * mistaken for data read from the file.
  */
-export function FieldValue<F extends AnyField>({ field, format, unit }: FieldValueProps<F>) {
+export function FieldValue<F extends AnyField>({
+  field,
+  format,
+  unit,
+}: FieldValueProps<F>) {
   const { status, value, note } = field;
   const text =
     value === null || value === undefined
@@ -35,15 +46,24 @@ export function FieldValue<F extends AnyField>({ field, format, unit }: FieldVal
   const rendered = text !== null && (
     <span className="font-mono text-[0.8125rem]">
       {text}
-      {unit && <span className="text-zinc-600 dark:text-zinc-400"> {unit}</span>}
+      {unit && (
+        <span className="text-stone-600 dark:text-stone-400"> {unit}</span>
+      )}
     </span>
   );
 
   return (
-    <span data-status={status} className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-1">
+    <span
+      data-status={status}
+      className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-1"
+    >
       {status === "present" && (
         <>
-          {rendered || <span className="text-zinc-600 italic dark:text-zinc-400">no value</span>}
+          {rendered || (
+            <span className="text-stone-600 italic dark:text-stone-400">
+              no value
+            </span>
+          )}
           <Note text={note} />
         </>
       )}
@@ -58,7 +78,9 @@ export function FieldValue<F extends AnyField>({ field, format, unit }: FieldVal
       )}
       {status === "absent" && (
         <>
-          <span className="text-zinc-600 italic dark:text-zinc-400">not present</span>
+          <span className="text-stone-600 italic dark:text-stone-400">
+            not present
+          </span>
           <Note text={note} />
         </>
       )}

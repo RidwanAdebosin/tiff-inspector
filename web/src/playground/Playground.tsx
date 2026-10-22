@@ -43,6 +43,29 @@ const REFERENCE: { call: string; about: string }[] = [
   },
 ];
 
+/** One short line for the status area after a run. */
+function summary(problemCount: number, passed: number, failed: number): string {
+  if (problemCount > 0) {
+    return problemCount === 1
+      ? "One thing to fix. It's underlined in the editor; hover it to see why."
+      : `${problemCount} things to fix. They're underlined in the editor; hover each to see why.`;
+  }
+  if (failed > 0)
+    return failed === 1
+      ? "One check didn't pass yet. The FAIL line says which."
+      : `${failed} checks didn't pass yet. The FAIL lines say which.`;
+  if (passed > 0)
+    return passed === 1 ? "Your check passed." : `All ${passed} checks passed.`;
+  return "Ran without any problems.";
+}
+
+function checksBadge(counts: { passed: number; failed: number }): string {
+  const total = counts.passed + counts.failed;
+  if (counts.failed === 0)
+    return total === 1 ? "1 check passed" : `All ${total} checks passed`;
+  return `${counts.passed} of ${total} checks passed`;
+}
+
 export default function Playground() {
   const [exampleId, setExampleId] = useState(EXAMPLES[0].id);
   const [code, setCode] = useState(EXAMPLES[0].code);
@@ -53,7 +76,9 @@ export default function Playground() {
     failed: number;
   } | null>(null);
   const [status, setStatus] = useState<RunnerStatus>("loading");
-  const [detail, setDetail] = useState("Loading the OCaml toplevel…");
+  const [detail, setDetail] = useState(
+    "Getting OCaml ready… this takes a few seconds the first time.",
+  );
   const runner = useRef<Runner | null>(null);
   const selectId = useId();
 
@@ -89,12 +114,14 @@ export default function Playground() {
       .then((version) => {
         if (cancelled || version === undefined) return;
         setStatus("ready");
-        setDetail(`OCaml ${version}`);
+        setDetail(`Ready. OCaml ${version}`);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
         setStatus("failed");
-        setDetail(err instanceof Error ? err.message : String(err));
+        setDetail(
+          `The playground couldn't start. Reloading the page usually fixes it. (${err instanceof Error ? err.message : String(err)})`,
+        );
       });
     return () => {
       cancelled = true;
@@ -110,14 +137,15 @@ export default function Playground() {
     r.run(code)
       .then((result) => {
         setChunks(result.chunks);
-        setProblems(toProblems(result));
+        const found = toProblems(result);
+        setProblems(found);
         setCounts(
           result.passed + result.failed > 0
             ? { passed: result.passed, failed: result.failed }
             : null,
         );
         setStatus("ready");
-        setDetail(result.failed > 0 ? "Some checks failed" : "Done");
+        setDetail(summary(found.length, result.passed, result.failed));
       })
       .catch(async (err: unknown) => {
         const message = err instanceof Error ? err.message : String(err);
@@ -128,14 +156,18 @@ export default function Playground() {
           try {
             await r.ready();
             setStatus("ready");
-            setDetail("Restarted");
+            setDetail("Stopped that one. Ready when you are.");
           } catch (e) {
             setStatus("failed");
-            setDetail(e instanceof Error ? e.message : String(e));
+            setDetail(
+              `The playground couldn't restart. Reloading the page usually fixes it. (${e instanceof Error ? e.message : String(e)})`,
+            );
           }
         } else {
           setStatus("failed");
-          setDetail(message);
+          setDetail(
+            `Something went wrong while running. Reloading the page usually fixes it. (${message})`,
+          );
         }
       });
   }, [status, code]);
@@ -166,6 +198,15 @@ export default function Playground() {
         </div>
       </div>
 
+      <ol
+        className={`flex flex-wrap gap-x-6 gap-y-1 text-sm ${muted}`}
+        aria-label="How it works"
+      >
+        <li>1. Pick an example, or write your own.</li>
+        <li>2. Press Run.</li>
+        <li>3. Read the output. Red means something to fix.</li>
+      </ol>
+
       <div className="flex flex-wrap items-center gap-3">
         <label htmlFor={selectId} className="text-sm font-medium">
           Example
@@ -174,7 +215,7 @@ export default function Playground() {
           id={selectId}
           value={exampleId}
           onChange={(e) => pickExample(e.target.value)}
-          className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm dark:border-stone-700 dark:bg-stone-900"
         >
           {EXAMPLES.map((e) => (
             <option key={e.id} value={e.id}>
@@ -216,26 +257,35 @@ export default function Playground() {
           aria-labelledby="playground-output"
           className={`${card} flex min-h-[20rem] flex-col`}
         >
-          <div className="flex items-center justify-between gap-2 border-b border-zinc-200 px-3 py-2 dark:border-zinc-800">
+          <div className="flex items-center justify-between gap-2 border-b border-stone-200 px-3 py-2 dark:border-stone-800">
             <h2 id="playground-output" className="text-sm font-semibold">
               Output
             </h2>
-            {counts && (
-              <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  counts.failed > 0
-                    ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200"
-                    : "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200"
-                }`}
-              >
-                {counts.passed} passed, {counts.failed} failed
-              </span>
-            )}
+            <span className="flex flex-wrap items-center gap-2">
+              {problems.length > 0 && (
+                <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-950 dark:text-red-200">
+                  {problems.length === 1
+                    ? "1 problem"
+                    : `${problems.length} problems`}
+                </span>
+              )}
+              {counts && (
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    counts.failed > 0
+                      ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200"
+                      : "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200"
+                  }`}
+                >
+                  {checksBadge(counts)}
+                </span>
+              )}
+            </span>
           </div>
           <div className="flex-1 overflow-auto">
             <Output
               chunks={chunks}
-              placeholder="Run the code to see its output here."
+              placeholder="Nothing here yet. Press Run, or Ctrl/Cmd+Enter, and your output will show up."
             />
           </div>
         </section>
@@ -260,7 +310,7 @@ export default function Playground() {
           className={`${card} p-4`}
         >
           <h2 id="playground-reference" className="text-sm font-semibold">
-            Helpers
+            Things you can call
           </h2>
           <ul className="mt-2 space-y-1 text-sm">
             {REFERENCE.map((r) => (

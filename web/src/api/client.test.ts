@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { successBody } from "../test/fixtures/successReport";
-import { interpretResponse, parseRetryAfter, uploadInspection, type InspectionError, type InspectionResult } from "./client";
+import {
+  interpretResponse,
+  parseRetryAfter,
+  uploadInspection,
+  type InspectionError,
+  type InspectionResult,
+} from "./client";
 import type { ErrorCode } from "./types";
 
 const failure = (code: ErrorCode, message = `server says ${code}`) =>
@@ -14,7 +20,8 @@ const failure = (code: ErrorCode, message = `server says ${code}`) =>
 
 /** Narrow a result to its error, failing the test for success or cancellation. */
 const errorOf = (r: InspectionResult): InspectionError => {
-  if (r.ok || r.cancelled) throw new Error(`expected an error result, got ${JSON.stringify(r)}`);
+  if (r.ok || r.cancelled)
+    throw new Error(`expected an error result, got ${JSON.stringify(r)}`);
   return r.error;
 };
 
@@ -38,14 +45,22 @@ describe("interpretResponse", () => {
     [422, "limit_exceeded", "limit_exceeded"],
     [429, "rate_limited", "rate_limited"],
     [500, "internal", "server"],
-  ])("HTTP %i with code %s → %s, keeping the server message", (status, code, kind) => {
-    const r = interpretResponse(status, failure(code));
-    expect(r).toEqual({ ok: false, error: { kind, code, status, message: `server says ${code}` } });
-  });
+  ])(
+    "HTTP %i with code %s → %s, keeping the server message",
+    (status, code, kind) => {
+      const r = interpretResponse(status, failure(code));
+      expect(r).toEqual({
+        ok: false,
+        error: { kind, code, status, message: `server says ${code}` },
+      });
+    },
+  );
 
   it("keeps limit_exceeded distinct from unsupported_feature", () => {
     const limit = errorOf(interpretResponse(422, failure("limit_exceeded")));
-    const unsupported = errorOf(interpretResponse(422, failure("unsupported_feature")));
+    const unsupported = errorOf(
+      interpretResponse(422, failure("unsupported_feature")),
+    );
     expect(limit.kind).toBe("limit_exceeded");
     expect(limit.kind).not.toBe(unsupported.kind);
   });
@@ -70,9 +85,18 @@ describe("interpretResponse", () => {
   });
 
   it("200 with an unexpected body is a server error", () => {
-    expect(interpretResponse(200, "not json")).toMatchObject({ ok: false, error: { kind: "server" } });
-    expect(interpretResponse(200, failure("internal"))).toMatchObject({ ok: false, error: { kind: "server" } });
-    expect(interpretResponse(200, JSON.stringify({ ok: true }))).toMatchObject({ ok: false, error: { kind: "server" } });
+    expect(interpretResponse(200, "not json")).toMatchObject({
+      ok: false,
+      error: { kind: "server" },
+    });
+    expect(interpretResponse(200, failure("internal"))).toMatchObject({
+      ok: false,
+      error: { kind: "server" },
+    });
+    expect(interpretResponse(200, JSON.stringify({ ok: true }))).toMatchObject({
+      ok: false,
+      error: { kind: "server" },
+    });
   });
 
   it("falls back to status when a FailureReport has an unknown code", () => {
@@ -83,18 +107,34 @@ describe("interpretResponse", () => {
   describe("Retry-After", () => {
     it("is carried as retryAfterSeconds on a 429 FailureReport", () => {
       const e = errorOf(interpretResponse(429, failure("rate_limited"), "5"));
-      expect(e).toEqual({ kind: "rate_limited", code: "rate_limited", status: 429, message: "server says rate_limited", retryAfterSeconds: 5 });
+      expect(e).toEqual({
+        kind: "rate_limited",
+        code: "rate_limited",
+        status: 429,
+        message: "server says rate_limited",
+        retryAfterSeconds: 5,
+      });
     });
 
     it("is carried on a non-JSON 429 too", () => {
-      expect(errorOf(interpretResponse(429, "busy", "12")).retryAfterSeconds).toBe(12);
+      expect(
+        errorOf(interpretResponse(429, "busy", "12")).retryAfterSeconds,
+      ).toBe(12);
     });
 
     it("is absent when the header is missing, empty or garbage", () => {
-      expect(errorOf(interpretResponse(429, failure("rate_limited")))).not.toHaveProperty("retryAfterSeconds");
-      expect(errorOf(interpretResponse(429, failure("rate_limited"), null))).not.toHaveProperty("retryAfterSeconds");
-      expect(errorOf(interpretResponse(429, failure("rate_limited"), ""))).not.toHaveProperty("retryAfterSeconds");
-      expect(errorOf(interpretResponse(429, failure("rate_limited"), "soon"))).not.toHaveProperty("retryAfterSeconds");
+      expect(
+        errorOf(interpretResponse(429, failure("rate_limited"))),
+      ).not.toHaveProperty("retryAfterSeconds");
+      expect(
+        errorOf(interpretResponse(429, failure("rate_limited"), null)),
+      ).not.toHaveProperty("retryAfterSeconds");
+      expect(
+        errorOf(interpretResponse(429, failure("rate_limited"), "")),
+      ).not.toHaveProperty("retryAfterSeconds");
+      expect(
+        errorOf(interpretResponse(429, failure("rate_limited"), "soon")),
+      ).not.toHaveProperty("retryAfterSeconds");
     });
   });
 });
@@ -134,7 +174,14 @@ describe("uploadInspection", () => {
     responseType = "";
     timeout = 0;
     abortCalls = 0;
-    upload: { onprogress?: (e: { loaded: number; total: number; lengthComputable: boolean }) => void; onload?: () => void } = {};
+    upload: {
+      onprogress?: (e: {
+        loaded: number;
+        total: number;
+        lengthComputable: boolean;
+      }) => void;
+      onload?: () => void;
+    } = {};
     onload?: () => void;
     onerror?: () => void;
     ontimeout?: () => void;
@@ -186,7 +233,10 @@ describe("uploadInspection", () => {
     xhr.status = 415;
     xhr.responseText = failure("not_a_tiff");
     xhr.onload?.();
-    expect(await promise).toMatchObject({ ok: false, error: { kind: "invalid_file", code: "not_a_tiff", status: 415 } });
+    expect(await promise).toMatchObject({
+      ok: false,
+      error: { kind: "invalid_file", code: "not_a_tiff", status: 415 },
+    });
   });
 
   it("reports total 0 when the request length is not computable", () => {
@@ -203,11 +253,17 @@ describe("uploadInspection", () => {
   it("maps transport errors and timeouts to network errors", async () => {
     const a = start();
     a.xhr.onerror?.();
-    expect(await a.promise).toMatchObject({ ok: false, error: { kind: "network" } });
+    expect(await a.promise).toMatchObject({
+      ok: false,
+      error: { kind: "network" },
+    });
 
     const b = start();
     b.xhr.ontimeout?.();
-    expect(await b.promise).toMatchObject({ ok: false, error: { kind: "network" } });
+    expect(await b.promise).toMatchObject({
+      ok: false,
+      error: { kind: "network" },
+    });
   });
 
   it("reads Retry-After from a 429 response", async () => {
@@ -216,7 +272,10 @@ describe("uploadInspection", () => {
     xhr.responseText = failure("rate_limited");
     xhr.responseHeaders["retry-after"] = "5";
     xhr.onload?.();
-    expect(await promise).toMatchObject({ ok: false, error: { kind: "rate_limited", retryAfterSeconds: 5 } });
+    expect(await promise).toMatchObject({
+      ok: false,
+      error: { kind: "rate_limited", retryAfterSeconds: 5 },
+    });
   });
 
   it("abort resolves cancelled and swallows any later load, error or progress", async () => {

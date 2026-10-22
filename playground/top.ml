@@ -5,7 +5,8 @@
      are "stdout", "stderr", "answer" (toplevel responses) and "location"
      ("line:col:endLine:endCol" of the last error).
    - [registerSample (name, bytes)]: makes a TIFF available as [Sample.get].
-   - [execute code]: runs code, returns {passed, failed} from [Test]. *)
+   - [execute code]: runs code (with or without [;;]), stopping at the first
+     error; returns {passed, failed} from [Test]. *)
 
 open Js_of_ocaml
 module Top = Js_of_ocaml_toplevel.JsooTop
@@ -22,17 +23,43 @@ let answer_formatter =
       emit "answer" (String.sub s off len))
     (fun () -> ())
 
-let highlight_location (loc : Location.t) =
+let highlight (loc : Location.t) =
   let open Lexing in
   let s = loc.loc_start and e = loc.loc_end in
   emit "location"
     (Printf.sprintf "%d:%d:%d:%d" s.pos_lnum (s.pos_cnum - s.pos_bol) e.pos_lnum
        (e.pos_cnum - e.pos_bol))
 
+let report exn =
+  (match Location.error_of_exn exn with
+  | Some (`Ok (err : Location.error)) -> highlight err.main.loc
+  | _ -> ());
+  Errors.report_error Format.err_formatter exn
+
+(* Phrases as [#use] reads them: [;;] is optional. Each definition runs on its
+   own so that everything before the first error stays defined. *)
+let phrases code =
+  let lb = Lexing.from_string code in
+  Location.init lb !Toploop.input_name;
+  Location.input_lexbuf := Some lb;
+  List.concat_map
+    (function
+      | Parsetree.Ptop_def items ->
+          List.map (fun item -> Parsetree.Ptop_def [ item ]) items
+      | dir -> [ dir ])
+    (Parse.use_file lb)
+
 let execute (code : Js.js_string Js.t) =
   Test.reset ();
-  (try Top.execute true ~highlight_location answer_formatter (Js.to_string code)
-   with exn -> emit "stderr" ("Fatal error: " ^ Printexc.to_string exn ^ "\n"));
+  (match phrases (Js.to_string code) with
+  | exception exn -> report exn
+  | phrases -> (
+      try
+        List.iter
+          (fun phr ->
+            ignore (Toploop.execute_phrase true answer_formatter phr : bool))
+          phrases
+      with exn -> report exn));
   Format.pp_print_flush answer_formatter ();
   Format.pp_print_flush Format.err_formatter ();
   flush stdout;

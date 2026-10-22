@@ -1,29 +1,52 @@
 import { describe, expect, it } from "vitest";
 import { MAX_UPLOAD_BYTES } from "./constants";
-import { hasAcceptedExtension, isTiffSignature, validateFile, validateFileMeta } from "./validation";
+import {
+  hasAcceptedExtension,
+  isTiffSignature,
+  validateFile,
+  validateFileMeta,
+} from "./validation";
 
-const tiffFile = (bytes: number[], name = "image.tif") => new File([new Uint8Array(bytes)], name);
+const tiffFile = (bytes: number[], name = "image.tif") =>
+  new File([new Uint8Array(bytes)], name);
 
 describe("extension", () => {
-  it.each(["a.tif", "a.tiff", "A.TIF", "scan.final.TiFf", "big.btf", "big.tf8", "BIG.BTF", "BIG.TF8"])("accepts %s", (n) => {
+  it.each([
+    "a.tif",
+    "a.tiff",
+    "A.TIF",
+    "scan.final.TiFf",
+    "big.btf",
+    "big.tf8",
+    "BIG.BTF",
+    "BIG.TF8",
+  ])("accepts %s", (n) => {
     expect(hasAcceptedExtension(n)).toBe(true);
   });
-  it.each(["a.png", "a.tif.zip", "tif", "a.tf", "a.btf.zip", "a.tf80"])("rejects %s", (n) => {
-    expect(hasAcceptedExtension(n)).toBe(false);
-  });
+  it.each(["a.png", "a.tif.zip", "tif", "a.tf", "a.btf.zip", "a.tf80"])(
+    "rejects %s",
+    (n) => {
+      expect(hasAcceptedExtension(n)).toBe(false);
+    },
+  );
   it("gives a specific message listing every accepted extension", () => {
     const r = validateFileMeta({ name: "photo.png", size: 10 });
     expect(r).toMatchObject({ ok: false, reason: "extension" });
-    if (!r.ok) expect(r.message).toMatch(/not a \.tif, \.tiff, \.btf or \.tf8 file/);
+    if (!r.ok)
+      expect(r.message).toMatch(/a \.tif, \.tiff, \.btf or \.tf8 file/);
   });
   it("accepts a BigTIFF with a .btf extension and signature", async () => {
-    expect(await validateFile(tiffFile([0x49, 0x49, 0x2b, 0x00, 8, 0], "scan.btf"))).toEqual({ ok: true });
+    expect(
+      await validateFile(tiffFile([0x49, 0x49, 0x2b, 0x00, 8, 0], "scan.btf")),
+    ).toEqual({ ok: true });
   });
 });
 
 describe("size", () => {
   it("accepts exactly the limit", () => {
-    expect(validateFileMeta({ name: "a.tif", size: MAX_UPLOAD_BYTES })).toEqual({ ok: true });
+    expect(validateFileMeta({ name: "a.tif", size: MAX_UPLOAD_BYTES })).toEqual(
+      { ok: true },
+    );
   });
   it("rejects one byte over the limit with the limit in the message", () => {
     const r = validateFileMeta({ name: "a.tif", size: MAX_UPLOAD_BYTES + 1 });
@@ -31,7 +54,10 @@ describe("size", () => {
     if (!r.ok) expect(r.message).toContain("25 MB");
   });
   it("rejects empty files", () => {
-    expect(validateFileMeta({ name: "a.tif", size: 0 })).toMatchObject({ ok: false, reason: "empty" });
+    expect(validateFileMeta({ name: "a.tif", size: 0 })).toMatchObject({
+      ok: false,
+      reason: "empty",
+    });
   });
 });
 
@@ -43,7 +69,9 @@ describe("magic bytes", () => {
     ["MM\\0+", [0x4d, 0x4d, 0x00, 0x2b]],
   ])("accepts %s", async (_label, sig) => {
     expect(isTiffSignature(sig)).toBe(true);
-    expect(await validateFile(tiffFile([...sig, 8, 0, 0, 0]))).toEqual({ ok: true });
+    expect(await validateFile(tiffFile([...sig, 8, 0, 0, 0]))).toEqual({
+      ok: true,
+    });
   });
 
   it.each([
@@ -54,11 +82,13 @@ describe("magic bytes", () => {
   ])("rejects %s", async (_label, bytes) => {
     const r = await validateFile(tiffFile(bytes));
     expect(r).toMatchObject({ ok: false, reason: "signature" });
-    if (!r.ok) expect(r.message).toMatch(/does not start with a TIFF signature/);
+    if (!r.ok) expect(r.message).toMatch(/start with a TIFF signature/);
   });
 
   it("checks extension before reading bytes", async () => {
-    const r = await validateFile(tiffFile([0x49, 0x49, 0x2a, 0x00], "image.png"));
+    const r = await validateFile(
+      tiffFile([0x49, 0x49, 0x2a, 0x00], "image.png"),
+    );
     expect(r).toMatchObject({ ok: false, reason: "extension" });
   });
 
