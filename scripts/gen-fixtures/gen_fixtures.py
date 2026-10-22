@@ -291,6 +291,23 @@ def build_fixtures():
         Tag(339, SHORT, [1]),
     ], [data16])], bigtiff=True)[0]
 
+    # bigtiff_rgb_inline: BigTIFF RGB with BitsPerSample=[8,8,8] and
+    # SampleFormat=[1,1,1] (3 SHORTs = 6 bytes) inline in the 8-byte field,
+    # as GDAL writes them
+    fx["bigtiff_rgb_inline.tif"] = write_tiff([Page([
+        Tag(256, SHORT, [4]),
+        Tag(257, SHORT, [4]),
+        Tag(258, SHORT, [8, 8, 8]),
+        Tag(259, SHORT, [1]),
+        Tag(262, SHORT, [2]),
+        Tag(273, LONG8, OFFSETS),
+        Tag(277, SHORT, [3]),
+        Tag(278, SHORT, [4]),
+        Tag(279, LONG8, COUNTS),
+        Tag(284, SHORT, [1]),
+        Tag(339, SHORT, [1, 1, 1]),
+    ], [pattern(4 * 4 * 3, 12)])], bigtiff=True)[0]
+
     # tiled: 32x32 gray8, 16x16 tiles
     tiles = [pattern(256, 10 + i) for i in range(4)]
     fx["tiled.tif"] = write_tiff([Page([
@@ -454,6 +471,7 @@ EXPECTED = {
         (2, 2, 3, [8, 8, 8], None, 2, 1, 1, "strips", 1)]),
     "deflate.tif": ("<", False, [(8, 8, 1, [8], None, 1, None, 8, "strips", 1)]),
     "bigtiff.tif": ("<", True, [(8, 8, 1, [16], [1], 1, None, 1, "strips", 1)]),
+    "bigtiff_rgb_inline.tif": ("<", True, [(4, 4, 3, [8, 8, 8], [1, 1, 1], 2, 1, 1, "strips", 1)]),
     "tiled.tif": ("<", False, [(32, 32, 1, [8], None, 1, None, 1, "tiles", 4)]),
     "gray_alpha.tif": ("<", False, [(4, 4, 2, [8, 8], None, 1, None, 1, "strips", 1)]),
     "unknown_tag.tif": ("<", False, [(16, 8, 1, [8], None, 1, None, 1, "strips", 1)]),
@@ -529,6 +547,13 @@ def verify(out_dir):
             check(data[2:4] == b"\x2b\x00", name + ": magic 43")
             # StripOffsets entry type must be LONG8 (16)
             check(struct.pack("<HHQ", 273, 16, 1) in data, name + ": LONG8 offsets")
+        if name == "bigtiff_rgb_inline.tif":
+            check(data[2:4] == b"\x2b\x00", name + ": magic 43")
+            # BitsPerSample and SampleFormat must be inline in the 8-byte field
+            check(struct.pack("<HHQ", 258, 3, 3) + b"\x08\x00\x08\x00\x08\x00\x00\x00" in data,
+                  name + ": bps inline")
+            check(struct.pack("<HHQ", 339, 3, 3) + b"\x01\x00\x01\x00\x01\x00\x00\x00" in data,
+                  name + ": sampleformat inline")
 
     for name, cat in EXPECTED_ERRORS.items():
         data = open(os.path.join(out_dir, name), "rb").read()

@@ -8,8 +8,8 @@ tiff-inspector inspect [OPTION]… FILE
 |---|---|
 | `-f`, `--format text\|json` | Output format (default `text`). |
 | `-t`, `--tags` | Include the full tag table (text format). |
-| `--ifd N` | Only show directory `N` (text format). |
-| `--max-ifds N` | Stop after `N` directories (default 1024). |
+| `--ifd N` | Only show directory `N`. In text output only that directory's section is printed; in JSON output the `directories` array holds only that directory (`ifd_count` still counts all of them). `N` outside `0 .. ifd_count-1` is a usage error (exit 2). |
+| `--max-ifds N` | Stop after `N` directories (default 1024, at least 1). |
 | `--debug` | Print internal exception details to stderr. |
 | `--version`, `--help` | |
 
@@ -29,7 +29,7 @@ tiff-inspector inspect [OPTION]… FILE
 |---|---|
 | 0 | Inspection succeeded (warnings may be present) |
 | 1 | Inspection failed (see `error.code`) |
-| 2 | Invalid arguments or options |
+| 2 | Invalid arguments or options (including `--ifd N` for a directory the file does not have, and `--max-ifds 0`) |
 
 ## Error codes
 
@@ -50,5 +50,6 @@ tiff-inspector inspect [OPTION]… FILE
 tiff-inspector inspect image.tif
 tiff-inspector inspect --tags --ifd 1 scan.tif
 tiff-inspector inspect --format json image.tif | jq '.directories[].sample_format'
+tiff-inspector inspect --format json --ifd 2 pyramid.tif | jq '.directories[0].layout'
 for f in *.tif; do tiff-inspector inspect -f json "$f" > "$f.json" || echo "failed: $f"; done
 ```

@@ -18,32 +18,17 @@ let ctx source (header : Ifd.header) =
 
 type raw = { bytes : Cstruct.t; items : int; truncated : bool }
 
-let encode_word ctx v =
-  let size = if ctx.bigtiff then 8 else 4 in
-  let buf = Cstruct.create size in
-  if ctx.bigtiff then Tiff.Endian.set_uint64 ctx.endian buf v
-  else Tiff.Endian.set_uint32 ctx.endian buf (Int64.to_int32 v);
-  buf
+(* Classic TIFF offsets are unsigned 32-bit values. ocaml-tiff reads them
+   with [Int64.of_int32], which sign-extends offsets of 2 GiB and above, so
+   every offset it hands us is masked back here before use. *)
+let file_offset ctx v =
+  if ctx.bigtiff then Int64.to_int v else Int64.to_int v land 0xFFFF_FFFF
 
-(* Re-encodes a value ocaml-tiff decoded from the entry's value field back into
-   the original left-justified bytes. *)
-let inline_bytes ctx ~field_type ~count v =
-  let buf = Cstruct.create (if ctx.bigtiff then 8 else 4) in
-  match field_type with
-  | 1 when count = 1 ->
-      Cstruct.set_uint8 buf 0 (Int64.to_int v);
-      Ok buf
-  | 3 when count = 1 ->
-      Tiff.Endian.set_uint16 ctx.endian buf (Int64.to_int v);
-      Ok buf
-  | 4 when count = 1 && ctx.bigtiff ->
-      Tiff.Endian.set_uint32 ctx.endian buf (Int64.to_int32 v);
-      Ok buf
-  | (1 | 3 | 4) when ctx.bigtiff ->
-      Error "ocaml-tiff keeps only the first of several inline BigTIFF values"
-  | _ -> Ok (encode_word ctx v)
-
-let raw ctx ~max_items entry =
+(* The value/offset field of an entry ([word], 4 bytes in classic TIFF and 8
+   in BigTIFF) holds the values themselves when they fit, otherwise the offset
+   of the values. It is read from the file rather than taken from ocaml-tiff,
+   which decodes only the first of several inline values. *)
+let raw ctx ~max_items ~word entry =
   let field_type = Ifd.entry_field_type entry in
   let count64 = Ifd.entry_count entry in
   match Tag_registry.field_type_size field_type with
@@ -57,25 +42,20 @@ let raw ctx ~max_items entry =
       in
       let items = min count max_items in
       let truncated = items < count in
-      let fits_inline = count <= inline_cap / size in
-      match Ifd.entry_location entry with
-      | Ifd.Inline v -> (
-          match inline_bytes ctx ~field_type ~count v with
-          | Ok buf ->
-              Ok { bytes = Cstruct.sub buf 0 (items * size); items; truncated }
-          | Error m -> Error (`Unreadable m))
-      | Ifd.At_offset v when fits_inline ->
-          let buf = encode_word ctx v in
-          Ok { bytes = Cstruct.sub buf 0 (items * size); items; truncated }
-      | Ifd.At_offset offset -> (
-          let offset = Int64.to_int offset in
-          match Source.read ctx.source ~offset ~length:(items * size) with
-          | bytes -> Ok { bytes; items; truncated }
-          | exception Source.Out_of_bounds _ ->
-              Error
-                (`Unreadable
-                   (Fmt.str "values at offset %d lie outside the file" offset)))
-      )
+      if count <= inline_cap / size then
+        Ok { bytes = Cstruct.sub word 0 (items * size); items; truncated }
+      else
+        let offset =
+          file_offset ctx
+            (if ctx.bigtiff then Tiff.Endian.uint64 ctx.endian word
+             else Tiff.Endian.uint32 ctx.endian word |> Int64.of_int32)
+        in
+        match Source.read ctx.source ~offset ~length:(items * size) with
+        | bytes -> Ok { bytes; items; truncated }
+        | exception Source.Out_of_bounds _ ->
+            Error
+              (`Unreadable
+                 (Fmt.str "values at offset %d lie outside the file" offset)))
 
 let printable_ascii s =
   let b = Buffer.create (String.length s) in
@@ -124,7 +104,7 @@ let values ctx ~field_type { bytes; items; _ } : Report.tag_value =
 
 let max_ascii = 4096
 
-let tag ctx ~max_items entry : Report.tag =
+let tag ctx ~max_items ~word entry : Report.tag =
   let id = Ifd.entry_tag_id entry in
   let field_type = Ifd.entry_field_type entry in
   let count = Ifd.entry_count entry |> Int64.to_int in
@@ -145,7 +125,7 @@ let tag ctx ~max_items entry : Report.tag =
       note = None;
     }
   in
-  match raw ctx ~max_items entry with
+  match raw ctx ~max_items ~word entry with
   | Ok r ->
       {
         base with
@@ -166,9 +146,9 @@ let tag ctx ~max_items entry : Report.tag =
       { base with value_status = Unreadable; note = Some m }
 
 (* Integer values of an entry, for interpreting well-known tags *)
-let ints ctx ~max_items entry =
+let ints ctx ~max_items ~word entry =
   let field_type = Ifd.entry_field_type entry in
-  match raw ctx ~max_items entry with
+  match raw ctx ~max_items ~word entry with
   | Error `Unsupported_type ->
       Error (Fmt.str "unknown field type %d" field_type)
   | Error (`Unreadable m) -> Error m
