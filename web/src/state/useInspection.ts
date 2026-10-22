@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import { uploadInspection } from "../api/client";
 import { validateFile } from "../lib/validation";
-import { initialState, inspectionReducer, isBusy, isRetryable, type InspectionAction } from "./inspection";
+import {
+  initialState,
+  inspectionReducer,
+  isBusy,
+  isCancellable,
+  isRetryable,
+  type InspectionAction,
+} from "./inspection";
 
 /**
  * Drives the inspection state machine: validation, then upload, then the
@@ -44,11 +51,9 @@ export function useInspection() {
       abortRef.current = handle.abort;
       const outcome = await handle.promise;
       abortRef.current = null;
-      send(
-        outcome.ok
-          ? { type: "succeeded", report: outcome.report, rawBody: outcome.rawBody }
-          : { type: "failed", error: outcome.error },
-      );
+      // A cancelled request has already been taken back to idle by `cancel`.
+      if (outcome.ok) send({ type: "succeeded", report: outcome.report, rawBody: outcome.rawBody });
+      else if (!outcome.cancelled) send({ type: "failed", error: outcome.error });
     } finally {
       runningRef.current = false;
     }
@@ -61,7 +66,14 @@ export function useInspection() {
     void run(state.file, { type: "retry" });
   }, [state, run]);
 
+  const cancel = useCallback(() => {
+    if (!isCancellable(state)) return;
+    abortRef.current?.();
+    abortRef.current = null;
+    dispatch({ type: "cancel" });
+  }, [state]);
+
   const reset = useCallback(() => dispatch({ type: "reset" }), []);
 
-  return { state, busy: isBusy(state), select, retry, reset };
+  return { state, busy: isBusy(state), select, retry, cancel, reset };
 }

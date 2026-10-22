@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { MAX_UPLOAD_BYTES } from "../lib/constants";
+import { useRef, useState } from "react";
+import { ACCEPTED_EXTENSIONS, MAX_UPLOAD_BYTES } from "../lib/constants";
 import { formatBytes } from "../lib/format";
 import type { InspectionState } from "../state/inspection";
 import { DropZone } from "./DropZone";
@@ -10,10 +10,12 @@ type UploadScreenProps = {
   busy: boolean;
   onFile: (file: File) => void;
   onRetry: () => void;
+  onCancel: () => void;
 };
 
-export function UploadScreen({ state, busy, onFile, onRetry }: UploadScreenProps) {
+export function UploadScreen({ state, busy, onFile, onRetry, onCancel }: UploadScreenProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [dropNote, setDropNote] = useState<string | null>(null);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -25,16 +27,28 @@ export function UploadScreen({ state, busy, onFile, onRetry }: UploadScreenProps
         </p>
       </div>
 
-      <DropZone inputRef={inputRef} disabled={busy} onFile={onFile} />
+      <DropZone inputRef={inputRef} disabled={busy} onFile={onFile} onNote={setDropNote} />
 
-      <UploadStatus state={state} onRetry={onRetry} onChooseAnother={() => inputRef.current?.click()} />
+      <UploadStatus
+        state={state}
+        note={dropNote}
+        onRetry={onRetry}
+        onCancel={onCancel}
+        onChooseAnother={() => inputRef.current?.click()}
+      />
 
       <dl className="grid gap-3 text-sm sm:grid-cols-2">
         <div>
           <dt className="font-medium">Supported formats</dt>
           <dd className="text-zinc-600 dark:text-zinc-400">
-            Classic TIFF and BigTIFF, little- or big-endian (<span className="font-mono">.tif</span>,{" "}
-            <span className="font-mono">.tiff</span>)
+            Classic TIFF and BigTIFF, little- or big-endian (
+            {ACCEPTED_EXTENSIONS.map((ext, i) => (
+              <span key={ext}>
+                {i > 0 && ", "}
+                <span className="font-mono">{ext}</span>
+              </span>
+            ))}
+            )
           </dd>
         </div>
         <div>

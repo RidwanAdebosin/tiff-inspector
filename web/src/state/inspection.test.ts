@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { successReport, successBody } from "../test/fixtures/successReport";
-import { initialState, inspectionReducer as reduce, isBusy, type InspectionState } from "./inspection";
+import {
+  initialState,
+  inspectionReducer as reduce,
+  isBusy,
+  isCancellable,
+  isRetryable,
+  type InspectionState,
+} from "./inspection";
 
 const file = new File(["x"], "a.tif");
 const other = new File(["y"], "b.tif");
@@ -24,6 +31,10 @@ describe("inspectionReducer", () => {
     expect(s).toEqual({ phase: "success", file, report: successReport, rawBody: successBody });
   });
 
+  it("keeps a non-computable (0) upload total so the UI can show an indeterminate bar", () => {
+    expect(reduce(uploading, { type: "upload_progress", loaded: 5, total: 0 })).toMatchObject({ loaded: 5, total: 0 });
+  });
+
   it("validation failure becomes an invalid_file error", () => {
     expect(reduce(validating, { type: "validation_failed", message: "bad" })).toEqual({
       phase: "error",
@@ -39,6 +50,14 @@ describe("inspectionReducer", () => {
       error: { kind: "malformed", code: "truncated", status: 422, message: "cut" },
     });
     expect(s).toEqual({ phase: "error", file, kind: "malformed", code: "truncated", status: 422, message: "cut" });
+  });
+
+  it("server failure carries retryAfterSeconds", () => {
+    const s = reduce(parsing, {
+      type: "failed",
+      error: { kind: "rate_limited", code: "rate_limited", status: 429, message: "slow down", retryAfterSeconds: 7 },
+    });
+    expect(s).toMatchObject({ phase: "error", kind: "rate_limited", retryAfterSeconds: 7 });
   });
 
   it("a response may arrive straight from uploading", () => {
@@ -58,10 +77,39 @@ describe("inspectionReducer", () => {
     expect(reduce(uploading, { type: "validation_passed" })).toBe(uploading);
   });
 
+  describe("cancel", () => {
+    it.each([uploading, parsing])("returns to idle from $phase", (s) => {
+      expect(isCancellable(s)).toBe(true);
+      expect(reduce(s, { type: "cancel" })).toEqual(initialState);
+    });
+
+    it.each([initialState, validating, errorOf("network")])("is ignored while $phase", (s) => {
+      expect(isCancellable(s)).toBe(false);
+      expect(reduce(s, { type: "cancel" })).toBe(s);
+    });
+
+    it("drops a late response from the cancelled request", () => {
+      const idle = reduce(uploading, { type: "cancel" });
+      expect(reduce(idle, { type: "succeeded", report: successReport, rawBody: "" })).toBe(idle);
+      expect(reduce(idle, { type: "failed", error: { kind: "server", message: "late" } })).toBe(idle);
+      expect(reduce(idle, { type: "uploaded" })).toBe(idle);
+    });
+
+    it("allows selecting a new file right after cancelling", () => {
+      const idle = reduce(parsing, { type: "cancel" });
+      expect(reduce(idle, { type: "select", file: other })).toEqual({ phase: "validating", file: other });
+    });
+  });
+
   it("retry re-validates the same file only for retryable errors", () => {
     expect(reduce(errorOf("network"), { type: "retry" })).toEqual(validating);
     const invalid = errorOf("invalid_file");
     expect(reduce(invalid, { type: "retry" })).toBe(invalid);
+  });
+
+  it("limit_exceeded is retryable; unsupported_feature is not", () => {
+    expect(isRetryable("limit_exceeded")).toBe(true);
+    expect(isRetryable("unsupported_feature")).toBe(false);
   });
 
   it("allows choosing another file from error and success", () => {

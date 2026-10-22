@@ -5,7 +5,7 @@ import { UploadScreen } from "./components/UploadScreen";
 import { useInspection } from "./state/useInspection";
 
 function App() {
-  const { state, busy, select, retry, reset } = useInspection();
+  const { state, busy, select, retry, cancel, reset } = useInspection();
   const mainRef = useRef<HTMLElement>(null);
   const showingResults = state.phase === "success";
 
@@ -36,7 +36,7 @@ function App() {
             onInspectAnother={reset}
           />
         ) : (
-          <UploadScreen state={state} busy={busy} onFile={select} onRetry={retry} />
+          <UploadScreen state={state} busy={busy} onFile={select} onRetry={retry} onCancel={cancel} />
         )}
       </main>
     </div>

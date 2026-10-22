@@ -5,16 +5,19 @@ import { hasAcceptedExtension, isTiffSignature, validateFile, validateFileMeta }
 const tiffFile = (bytes: number[], name = "image.tif") => new File([new Uint8Array(bytes)], name);
 
 describe("extension", () => {
-  it.each(["a.tif", "a.tiff", "A.TIF", "scan.final.TiFf"])("accepts %s", (n) => {
+  it.each(["a.tif", "a.tiff", "A.TIF", "scan.final.TiFf", "big.btf", "big.tf8", "BIG.BTF", "BIG.TF8"])("accepts %s", (n) => {
     expect(hasAcceptedExtension(n)).toBe(true);
   });
-  it.each(["a.png", "a.tif.zip", "tif", "a.tf"])("rejects %s", (n) => {
+  it.each(["a.png", "a.tif.zip", "tif", "a.tf", "a.btf.zip", "a.tf80"])("rejects %s", (n) => {
     expect(hasAcceptedExtension(n)).toBe(false);
   });
-  it("gives a specific message", () => {
+  it("gives a specific message listing every accepted extension", () => {
     const r = validateFileMeta({ name: "photo.png", size: 10 });
     expect(r).toMatchObject({ ok: false, reason: "extension" });
-    if (!r.ok) expect(r.message).toMatch(/not a \.tif or \.tiff file/);
+    if (!r.ok) expect(r.message).toMatch(/not a \.tif, \.tiff, \.btf or \.tf8 file/);
+  });
+  it("accepts a BigTIFF with a .btf extension and signature", async () => {
+    expect(await validateFile(tiffFile([0x49, 0x49, 0x2b, 0x00, 8, 0], "scan.btf"))).toEqual({ ok: true });
   });
 });
 

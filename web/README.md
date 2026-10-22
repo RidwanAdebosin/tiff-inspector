@@ -1,7 +1,8 @@
 # TIFF Inspector web
 
 React 19 + TypeScript + Vite 6 + Tailwind v4 frontend for TIFF Inspector. Upload a
-`.tif`/`.tiff` file (max 25 MB), and it shows the inspection report from the OCaml API:
+`.tif`/`.tiff` (or BigTIFF `.btf`/`.tf8`) file (max 25 MB), and it shows the inspection
+report from the OCaml API:
 overview, image file directories (IFDs), image properties, storage layout, samples and
 planes, pixel-decoding support and a searchable tag table. It also has a "Download JSON"
 export.
@@ -80,9 +81,26 @@ scripts/        gen-types.mjs, validate-goldens.mjs
 
 The inspection flow is an explicit state machine:
 `idle → validating → uploading(progress) → parsing → success | error(kind)`.
-The error kinds are `invalid_file`, `unsupported_feature`, `malformed`, `oversized`,
-`rate_limited`, `network` and `server`. Only `network`, `server` and `rate_limited` offer
-Retry. Every error offers "Choose another file". Client-side validation only gives faster
-feedback; the server re-checks everything.
+`cancel` aborts an in-flight request (`uploading | parsing → idle`); an aborted request
+never produces a late success or error.
 
-The maximum upload size is defined once, in `src/lib/constants.ts` (`MAX_UPLOAD_BYTES`).
+The error kinds are:
+
+| Kind                  | Source                                                     | Retry |
+| --------------------- | ---------------------------------------------------------- | ----- |
+| `invalid_file`        | client validation, 400/415 `invalid_request`/`not_a_tiff`  | no    |
+| `unsupported_feature` | 422 `unsupported_feature`                                  | no    |
+| `limit_exceeded`      | 422 `limit_exceeded` (worker hit the time or memory cap)   | yes   |
+| `malformed`           | 422 `truncated`/`malformed`/`file_unreadable`/…            | no    |
+| `oversized`           | 413 `file_too_large`                                       | no    |
+| `rate_limited`        | 429 `rate_limited`; honours `Retry-After` (seconds)        | yes   |
+| `network`             | connection failed, upload timeout (300 s), 502/503/504 page | yes   |
+| `server`              | 500 `internal`, or an unreadable 2xx body                  | yes   |
+
+`limit_exceeded` is retryable because the cap is per inspection and the server may
+succeed when less loaded. For `rate_limited` with `Retry-After`, the Retry button reads
+"Retry in N s" and is disabled until the delay elapses. Every error offers "Choose another
+file". Client-side validation only gives faster feedback; the server re-checks everything.
+
+The maximum upload size, the accepted extensions and the upload timeout are defined once,
+in `src/lib/constants.ts` (`MAX_UPLOAD_BYTES`, `ACCEPTED_EXTENSIONS`, `UPLOAD_TIMEOUT_MS`).

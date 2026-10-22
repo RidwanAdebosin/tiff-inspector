@@ -21,6 +21,13 @@ const SIGNATURES: readonly (readonly number[])[] = [
   [0x4d, 0x4d, 0x00, 0x2b],
 ];
 
+/** "a, b or c" for user-facing lists of the accepted extensions. */
+export function formatAcceptedExtensions(): string {
+  const exts = [...ACCEPTED_EXTENSIONS];
+  const last = exts.pop();
+  return `${exts.join(", ")} or ${last}`;
+}
+
 export function hasAcceptedExtension(name: string): boolean {
   const lower = name.toLowerCase();
   return ACCEPTED_EXTENSIONS.some((ext) => lower.endsWith(ext));
@@ -36,7 +43,7 @@ export function validateFileMeta(file: Pick<File, "name" | "size">): ValidationR
     return {
       ok: false,
       reason: "extension",
-      message: `“${file.name}” is not a .tif or .tiff file. Choose a TIFF file to inspect.`,
+      message: `“${file.name}” is not a ${formatAcceptedExtensions()} file. Choose a TIFF file to inspect.`,
     };
   }
   if (file.size === 0) {
